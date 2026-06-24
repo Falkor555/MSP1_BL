@@ -2,6 +2,7 @@ import uuid
 import os
 from django.db import models
 from django.conf import settings
+from .validators import validate_image_file  # <-- 1. Le nouvel import
 
 def get_file_path_with_uuid(instance, filename):
     """
@@ -11,7 +12,6 @@ def get_file_path_with_uuid(instance, filename):
     ext = filename.split('.')[-1]
     filename = f"{uuid.uuid4()}.{ext}"
     
-    # Range les images dans un sous-dossier par type de requête ou ID utilisateur
     return os.path.join(f"tryon_images/user_{instance.user.id}", filename)
 
 class TryOnRequest(models.Model):
@@ -24,11 +24,13 @@ class TryOnRequest(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='tryon_requests')
     
-    person_image = models.ImageField(upload_to=get_file_path_with_uuid)
-    garment_image = models.ImageField(upload_to=get_file_path_with_uuid)
+    # <-- 2. Ajout du paramètre validators=[validate_image_file] sur les deux champs d'entrée
+    person_image = models.ImageField(upload_to=get_file_path_with_uuid, validators=[validate_image_file])
+    garment_image = models.ImageField(upload_to=get_file_path_with_uuid, validators=[validate_image_file])
+    
     garment_description = models.TextField(blank=True, null=True)
     
-    # Le résultat sera vide au moment de la création
+    # L'image de résultat n'a pas besoin du validateur car c'est ton backend qui la génère, pas l'utilisateur
     result_image = models.ImageField(upload_to=get_file_path_with_uuid, blank=True, null=True)
     
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
@@ -36,4 +38,3 @@ class TryOnRequest(models.Model):
 
     def __str__(self):
         return f"Request {self.id} - {self.user.username} ({self.status})"
-    
