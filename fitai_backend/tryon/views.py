@@ -14,6 +14,8 @@ from django.http import FileResponse, HttpResponseForbidden, Http404
 from rest_framework.views import APIView
 from django.conf import settings
 
+from .throttles import TryOnRateThrottle
+
 class TryOnListCreateView(generics.ListCreateAPIView):
     serializer_class = TryOnRequestSerializer
     permission_classes = [IsAuthenticated]
@@ -23,6 +25,15 @@ class TryOnListCreateView(generics.ListCreateAPIView):
         # Restriction stricte : l'utilisateur ne voit que ses propres demandes
         return TryOnRequest.objects.filter(user=self.request.user).order_by('-created_at')
 
+    def get_throttles(self):
+        """
+        Applique la limitation de requêtes uniquement lors de la création (POST).
+        Les requêtes de lecture (GET) restent illimitées.
+        """
+        if self.request.method == 'POST':
+            return [TryOnRateThrottle()]
+        return []
+    
     def create(self, request, *path, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_validate_by_drf = serializer.is_valid(raise_exception=True)
