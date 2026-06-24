@@ -175,3 +175,27 @@ SIMPLE_JWT = {
     'SIGNING_KEY': SECRET_KEY,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'tryon.services': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
