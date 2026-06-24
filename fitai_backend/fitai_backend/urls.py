@@ -16,8 +16,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from tryon.views import ProtectedMediaView # Import de la vue sécurisée
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('users.urls')),  # Inclut toutes les routes de l'application users
+    path('api/tryon/', include('tryon.urls')),  # Les nouveaux endpoints IA
+
+    # Interception et sécurisation du dossier des médias
+    path('media/<path:path>', ProtectedMediaView.as_view(), name='protected-media'),
 ]
