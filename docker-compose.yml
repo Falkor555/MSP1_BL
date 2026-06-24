@@ -7,9 +7,26 @@ services:
       POSTGRES_PASSWORD: fitai_password
       POSTGRES_DB: fitai_db
     ports:
-      - "5433:5432"
+      - "5433:5432"  # Permet toujours d'accéder à la DB depuis Windows sur le port 5433
     volumes:
       - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./fitai_backend:/app  # Synchronise le code en temps réel (Hot-reload actif)
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./fitai_backend/.env  # Charge toutes les variables du .env automatiquement
+    environment:
+      # Astuce magique : On écrase l'adresse de la DB du .env uniquement pour Docker.
+      # À l'intérieur du réseau Docker, le backend parle à la DB via le nom du service "db" sur le port standard 5432.
+      - DATABASE_URL=postgres://fitai_user:fitai_password@db:5432/fitai_db
+    depends_on:
+      - db  # Attend que le conteneur de la base de données soit prêt avant de lancer Django
 
 volumes:
   pgdata:
