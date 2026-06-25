@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/api_constants.dart';
 import 'auth_interceptor.dart';
@@ -30,7 +31,7 @@ class ApiClient {
       LogInterceptor(
         requestBody: true,
         responseBody: true,
-        logPrint: (obj) => print(obj), 
+        logPrint: (obj) => debugPrint(obj.toString()),
       ),
     ]);
   }

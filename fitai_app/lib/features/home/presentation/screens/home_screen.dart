@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/profile_provider.dart';
-import '../../../tryon/tryon_screen.dart';
+import '../../../tryon/presentation/screens/tryon_screen.dart';
 import '../../../tryon/history_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -35,7 +35,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         title: profileAsync.when(
           data: (username) => Text('Bonjour, $username', style: const TextStyle(fontSize: 20)),
           loading: () => const Text('Chargement...'),
-          error: (_, __) => const Text('FitAI'),
+          error: (_, _) => const Text('FitAI'),
         ),
         actions: [
           IconButton(
