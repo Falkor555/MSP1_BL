@@ -35,7 +35,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         title: profileAsync.when(
           data: (username) => Text('Bonjour, $username', style: const TextStyle(fontSize: 20)),
           loading: () => const Text('Chargement...'),
-          error: (_, __) => const Text('FitAI'),
+          error: (_, _) => const Text('FitAI'),
         ),
         actions: [
           IconButton(

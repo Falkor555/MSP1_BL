@@ -66,7 +66,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
   // --- Logique de partage ---
   void _shareImage(String url) {
     // Partage simple du lien. L'OS s'occupe d'ouvrir les apps natives.
-    Share.share("Regarde mon nouvel essayage virtuel sur FitAI ! $url");
+    SharePlus.instance.share(ShareParams(text: "Regarde mon nouvel essayage virtuel sur FitAI ! $url"));
   }
 
   @override
