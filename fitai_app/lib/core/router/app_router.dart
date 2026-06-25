@@ -7,7 +7,7 @@ import '../constants/api_constants.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
-import '../../features/tryon/tryon_screen.dart';
+import '../../features/tryon/presentation/screens/tryon_screen.dart';
 import '../../features/tryon/history_screen.dart';
 import '../../features/tryon/result_screen.dart';
 
