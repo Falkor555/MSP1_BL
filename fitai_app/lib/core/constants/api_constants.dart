@@ -12,4 +12,11 @@ class ApiConstants {
 
   // TryOn
   static const String tryon = '$baseUrl/tryon/';
+
+  // --- Auth Tokens ---
+  static const String accessTokenKey = 'access_token';
+  static const String refreshTokenKey = 'refresh_token';
+
+  // --- Nouveaux Endpoints ---
+  static const String tokenRefresh = '$baseUrl/users/token/refresh/'; // Ajuste selon ton URL Django
 }
