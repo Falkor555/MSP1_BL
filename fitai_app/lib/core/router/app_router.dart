@@ -4,9 +4,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../constants/api_constants.dart';
 // Importe tes écrans ici (ajuste les chemins si besoin)
-import '../../features/auth/login_screen.dart';
-import '../../features/auth/register_screen.dart';
-import '../../features/tryon/home_screen.dart';
+import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/tryon/tryon_screen.dart';
 import '../../features/tryon/history_screen.dart';
 import '../../features/tryon/result_screen.dart';

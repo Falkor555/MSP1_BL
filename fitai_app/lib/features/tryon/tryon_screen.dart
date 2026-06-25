@@ -5,9 +5,9 @@ class TryOnScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Tryon')),
-      body: const Center(child: Text('Page Tryon')),
+    // Plus de Scaffold ici, juste le contenu central
+    return const Center(
+      child: Text('Écran : Nouvel essayage', style: TextStyle(fontSize: 18)),
     );
   }
 }

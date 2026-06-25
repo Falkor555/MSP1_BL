@@ -5,9 +5,8 @@ class HistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Historique')),
-      body: const Center(child: Text('Page Historique')),
+    return const Center(
+      child: Text('Écran : Historique de mes essayages', style: TextStyle(fontSize: 18)),
     );
   }
 }

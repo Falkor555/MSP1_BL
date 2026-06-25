@@ -6,17 +6,15 @@ class ApiConstants {
   // --- Endpoints ---
   
   // Utilisateurs (Auth)
-  static const String login = '$baseUrl/users/login/';
-  static const String register = '$baseUrl/users/register/';
-  static const String profile = '$baseUrl/users/profile/';
+  static const String login = '$baseUrl/auth/token/';        // SimpleJWT login
+  static const String register = '$baseUrl/auth/register/';  // Inscription
+  static const String profile = '$baseUrl/auth/profile/';    // Profil utilisateur (à venir côté back)
 
   // TryOn
-  static const String tryon = '$baseUrl/tryon/';
+  static const String tryon = '$baseUrl/tryon/';             // Création et listing des essayages
 
   // --- Auth Tokens ---
   static const String accessTokenKey = 'access_token';
   static const String refreshTokenKey = 'refresh_token';
-
-  // --- Nouveaux Endpoints ---
-  static const String tokenRefresh = '$baseUrl/users/token/refresh/'; // Ajuste selon ton URL Django
+  static const String tokenRefresh = '$baseUrl/auth/token/refresh/'; // Rafraîchissement du token
 }

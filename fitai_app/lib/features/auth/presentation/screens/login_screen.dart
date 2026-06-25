@@ -12,15 +12,12 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-
-  // Regex simple pour valider le format email
-  final _emailRegex = RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -29,7 +26,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (_formKey.currentState!.validate()) {
       try {
         await ref.read(authProvider.notifier).login(
-          _emailController.text.trim(),
+          _usernameController.text.trim(),
           _passwordController.text,
         );
         // Si aucune erreur n'est levée, on redirige vers l'accueil
@@ -60,12 +57,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
+                controller: _usernameController,
+                keyboardType: TextInputType.text,
+                decoration: const InputDecoration(labelText: "Nom d'utilisateur", border: OutlineInputBorder()),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Veuillez renseigner votre email';
-                  if (!_emailRegex.hasMatch(value)) return 'Format d\'email invalide';
+                  if (value == null || value.isEmpty) return 'Veuillez renseigner votre nom d\'utilisateur';
                   return null;
                 },
               ),

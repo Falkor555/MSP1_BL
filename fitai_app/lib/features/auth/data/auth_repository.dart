@@ -18,10 +18,11 @@ class AuthRepository {
 
   AuthRepository({required this.apiClient, required this.storage});
 
-  Future<void> login(String email, String password) async {
+  Future<void> login(String username, String password) async {
     final response = await apiClient.dio.post(
       ApiConstants.login,
-      data: {'email': email, 'password': password},
+      // On envoie "username" à Django au lieu de "email"
+      data: {'username': username, 'password': password},
     );
     
     // Stockage des tokens en cas de succès (status 200)

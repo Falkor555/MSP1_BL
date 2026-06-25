@@ -52,8 +52,8 @@ INSTALLED_APPS = [
 
 # 3. Middleware (Ajout obligatoire de CorsMiddleware tout en haut)
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -146,10 +146,10 @@ MEDIA_ROOT = BASE_DIR / 'media'
 MAX_UPLOAD_SIZE = config('MAX_UPLOAD_SIZE_MB', default=5, cast=int) * 1024 * 1024
 
 # Configuration de base pour CORS (Autorise le développement local)
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",
+#     "http://127.0.0.1:3000",
+# ]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -208,3 +208,5 @@ LOGGING = {
         },
     },
 }
+
+CORS_ALLOW_ALL_ORIGINS = True

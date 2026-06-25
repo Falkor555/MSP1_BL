@@ -11,9 +11,9 @@ class AuthNotifier extends AsyncNotifier<void> {
     _repository = ref.watch(authRepositoryProvider);
   }
 
-  Future<void> login(String email, String password) async {
-    state = const AsyncLoading(); // Déclenche le loader dans l'UI
-    state = await AsyncValue.guard(() => _repository.login(email, password));
+  Future<void> login(String username, String password) async {
+    state = const AsyncLoading(); 
+    state = await AsyncValue.guard(() => _repository.login(username, password));
     
     if (state.hasError) {
       // Relance l'erreur pour que le widget puisse afficher la SnackBar
