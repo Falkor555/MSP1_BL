@@ -1,39 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'core/theme/app_theme.dart';
+import 'core/router/app_router.dart';
 
 void main() {
-  // ProviderScope permet à Riverpod de fonctionner dans toute l'app
   runApp(const ProviderScope(child: FitAiApp()));
 }
 
-class FitAiApp extends StatelessWidget {
+// FitAiApp devient un ConsumerWidget pour pouvoir lire les "Providers" de Riverpod
+class FitAiApp extends ConsumerWidget {
   const FitAiApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
+  Widget build(BuildContext context, WidgetRef ref) {
+    // On récupère notre instance de GoRouter
+    final router = ref.watch(routerProvider);
+
+    // On utilise MaterialApp.router pour déléguer la navigation à go_router
+    return MaterialApp.router(
       title: 'FitAI TryOn',
-      debugShowCheckedModeBanner: false, // Enlève le petit bandeau "DEBUG"
-      theme: AppTheme.lightTheme, // On applique notre thème ici !
-      
-      // Pour l'instant, un simple écran d'accueil temporaire
-      home: Scaffold(
-        appBar: AppBar(title: const Text('FitAI')),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text('Bienvenue sur FitAI', style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {},
-                child: const Text('Bouton Thémé'),
-              ),
-            ],
-          ),
-        ),
-      ),
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
+      routerConfig: router, // Injection de la configuration du routeur
     );
   }
 }
