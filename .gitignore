@@ -110,6 +110,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!fitai_app/lib/
 lib64/
 parts/
 sdist/

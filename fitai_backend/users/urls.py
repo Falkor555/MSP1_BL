@@ -3,10 +3,12 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
-from .views import RegisterView
+from .views import RegisterView, UserProfileView
 
 urlpatterns = [
     path('auth/register/', RegisterView.as_view(), name='auth_register'),
     path('auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    # La nouvelle route pour le profil :
+    path('auth/profile/', UserProfileView.as_view(), name='auth_profile'),
 ]
