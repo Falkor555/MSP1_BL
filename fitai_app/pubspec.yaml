@@ -34,7 +34,7 @@ dependencies:
   # --- Mes nouvelles dépendances ---
   flutter_riverpod: ^2.5.1      # Gestion d'état
   dio: ^5.4.3                   # Client HTTP (appels API)
-  image_picker: ^1.1.1          # Accès galerie/caméra
+  image_picker: ^1.2.2          # Accès galerie/caméra
   cached_network_image: ^3.3.1  # Affichage et cache des images distantes
   flutter_secure_storage: ^9.2.1 # Stockage sécurisé (pour le token JWT)
   go_router: ^14.1.4            # Navigation/Routage
