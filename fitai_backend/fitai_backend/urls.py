@@ -19,7 +19,8 @@ from django.urls import path, include
 from tryon.views import ProtectedMediaView # Import de la vue sécurisée
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    # path('admin/', admin.site.urls),
+    path('portail-secret-fitai-falkor/', admin.site.urls),
     path('api/', include('users.urls')),  # Inclut toutes les routes de l'application users
     path('api/tryon/', include('tryon.urls')),  # Les nouveaux endpoints IA
 

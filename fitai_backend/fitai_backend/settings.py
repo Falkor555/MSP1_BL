@@ -24,9 +24,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # 1. Sécurité & Mode Debug via python-decouple
 SECRET_KEY = config('SECRET_KEY')
-DEBUG = config('DEBUG', default=False, cast=bool)
+# DEBUG sera True en local, mais False en production si la variable n'est pas définie
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+# Autorise uniquement mon domaine de production (ou localhost en dev)
+allowed_hosts_env = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost')
+ALLOWED_HOSTS = allowed_hosts_env.split(',')
 
 
 # Application definition
@@ -210,3 +213,12 @@ LOGGING = {
 }
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+# Empêche le navigateur de "deviner" le type de contenu (évite les exécutions de scripts cachés)
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# Active le filtre XSS natif des navigateurs
+SECURE_BROWSER_XSS_FILTER = True
+
+# Empêche le d'être inclus dans une iframe (protection contre le Clickjacking)
+X_FRAME_OPTIONS = 'DENY'
