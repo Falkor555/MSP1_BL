@@ -27,8 +27,11 @@ class TryOnService:
         start_time = time.time()
         
         try:
-            # Connexion au client Gradio (avec le paramètre corrigé 'token')
-            client = Client(cls.SPACE_ID, token=hf_token if hf_token else None)
+            client = Client(
+                cls.SPACE_ID,
+                token=hf_token if hf_token else None,
+                httpx_kwargs={"timeout": 300},  # 5 min — IDM-VTON peut prendre 60-90s en cold start
+            )
             
             logger.info("Envoi des fichiers et de la description à l'API Gradio (IDM-VTON)...")
             

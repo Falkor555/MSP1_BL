@@ -77,7 +77,7 @@ class TryOnListCreateView(generics.ListCreateAPIView):
             
         instance.save()
         # Re-sérialisation de l'instance mise à jour avec le résultat final
-        return Response(TryOnRequestSerializer(instance).data, status=status.HTTP_201_CREATED)
+        return Response(TryOnRequestSerializer(instance, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
 
 class TryOnDetailView(generics.RetrieveAPIView):

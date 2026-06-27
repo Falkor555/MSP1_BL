@@ -1,14 +1,14 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../data/tryon_repository.dart';
-import '../../domain/models/tryon_model.dart'; // Import nécessaire pour le modèle
+import '../../domain/models/tryon_model.dart';
 
 // 1. La classe qui contient toutes les données de l'écran d'essayage
 class TryOnState {
-  final File? personImage;
-  final File? garmentImage;
+  final XFile? personImage;
+  final XFile? garmentImage;
   final String description;
   final String? resultImageUrl;
   final String? errorMessage;
@@ -22,8 +22,8 @@ class TryOnState {
   });
 
   TryOnState copyWith({
-    File? personImage,
-    File? garmentImage,
+    XFile? personImage,
+    XFile? garmentImage,
     String? description,
     String? resultImageUrl,
     String? errorMessage,
@@ -66,8 +66,8 @@ class TryOnNotifier extends AsyncNotifier<TryOnState> {
   }
 
   // --- Méthodes d'essayage ---
-  void setPersonImage(File file) => state = AsyncData(state.value!.copyWith(personImage: file, errorMessage: null));
-  void setGarmentImage(File file) => state = AsyncData(state.value!.copyWith(garmentImage: file, errorMessage: null));
+  void setPersonImage(XFile file) => state = AsyncData(state.value!.copyWith(personImage: file, errorMessage: null));
+  void setGarmentImage(XFile file) => state = AsyncData(state.value!.copyWith(garmentImage: file, errorMessage: null));
   void setDescription(String text) => state = AsyncData(state.value!.copyWith(description: text));
 
   Future<void> submitTryOn() async {
@@ -86,8 +86,14 @@ class TryOnNotifier extends AsyncNotifier<TryOnState> {
       );
       state = AsyncData(currentState.copyWith(resultImageUrl: result.resultImageUrl, errorMessage: null));
     } catch (e) {
-      String errorMsg = "Une erreur est survenue.";
-      if (e is DioException) errorMsg = e.message ?? errorMsg;
+      String errorMsg;
+      if (e is DioException) {
+        final statusCode = e.response?.statusCode;
+        final serverError = e.response?.data?['error'] as String?;
+        errorMsg = serverError ?? "Erreur serveur (HTTP $statusCode).";
+      } else {
+        errorMsg = "Erreur inattendue : ${e.runtimeType}";
+      }
       state = AsyncData(currentState.copyWith(errorMessage: errorMsg));
     }
   }

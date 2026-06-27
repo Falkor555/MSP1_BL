@@ -1,12 +1,12 @@
-import 'dart:io';
+import 'dart:io' show File;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ImagePickerCard extends StatelessWidget {
   final String title;
-  final File? imageFile;
-  final Function(File) onImageSelected;
+  final XFile? imageFile;
+  final Function(XFile) onImageSelected;
 
   const ImagePickerCard({
     super.key,
@@ -26,8 +26,7 @@ class ImagePickerCard extends StatelessWidget {
       );
 
       if (pickedFile != null) {
-        // Renvoie le fichier sélectionné au parent
-        onImageSelected(File(pickedFile.path));
+        onImageSelected(pickedFile);
       }
     } catch (e) {
       // Gestion basique si l'utilisateur refuse les permissions
@@ -101,7 +100,7 @@ class ImagePickerCard extends StatelessWidget {
                         // Sur le Web, ImagePicker renvoie une URL blob temporaire
                         ? Image.network(imageFile!.path, fit: BoxFit.cover) 
                         // Sur mobile, on lit le fichier physique
-                        : Image.file(imageFile!, fit: BoxFit.cover),
+                        : Image.file(File(imageFile!.path), fit: BoxFit.cover),
                   )
                 : Column(
                     mainAxisAlignment: MainAxisAlignment.center,

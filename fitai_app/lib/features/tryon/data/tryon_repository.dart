@@ -1,9 +1,9 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/constants/api_constants.dart';
-import '../../auth/data/auth_repository.dart'; // Pour récupérer le apiClientProvider
+import '../../auth/data/auth_repository.dart';
 import '../domain/models/tryon_model.dart';
 
 final tryOnRepositoryProvider = Provider((ref) => TryOnRepository(
@@ -16,13 +16,17 @@ class TryOnRepository {
   TryOnRepository({required this.apiClient});
 
   // Création d'un essayage (Envoi des images)
-  Future<TryOnModel> createTryOn(File personImage, File garmentImage, String description) async {
-    // 1. Préparation de l'enveloppe multipart
+  Future<TryOnModel> createTryOn(XFile personImage, XFile garmentImage, String description) async {
     final formData = FormData.fromMap({
-      'description': description,
-      // Les clés 'person_image' et 'garment_image' doivent correspondre exactement aux noms attendus par ton API Django
-      'person_image': await MultipartFile.fromFile(personImage.path),
-      'garment_image': await MultipartFile.fromFile(garmentImage.path),
+      'garment_description': description,
+      'person_image': MultipartFile.fromBytes(
+        await personImage.readAsBytes(),
+        filename: personImage.name,
+      ),
+      'garment_image': MultipartFile.fromBytes(
+        await garmentImage.readAsBytes(),
+        filename: garmentImage.name,
+      ),
     });
 
     // 2. Envoi au serveur
