@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maquettes FitAI — Enchaînement des écrans</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   VARIABLES — Couleurs exactes de AppColors.dart
+   ═══════════════════════════════════════════════ */
+:root {
+  --primary:          #6200EA;
+  --primary-variant:  #3700B3;
+  --secondary:        #03DAC6;
+  --background:       #F6F6F6;
+  --surface:          #FFFFFF;
+  --text-primary:     #212121;
+  --text-secondary:   #757575;
+  --error:            #B00020;
+  --success:          #00C853;
+  --divider:          #E0E0E0;
+  --on-primary:       #FFFFFF;
+  --disabled-bg:      #E0E0E0;
+  --disabled-text:    #9E9E9E;
+  --card-shadow:      0 2px 4px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+
+  /* Page de travail */
+  --canvas: #1E1E1E;
+  --canvas-text: #AEAEAE;
+  --phone-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 8px 16px rgba(0,0,0,0.35);
+}
+
+/* ═══════════════════════════════════════════════
+   PAGE GLOBALE
+   ═══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--canvas);
+  font-family: 'Roboto', sans-serif;
+  color: var(--canvas-text);
+  min-height: 100vh;
+  padding: 48px 40px 80px;
+}
+
+.page-title {
+  text-align: center;
+  margin-bottom: 8px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.5px;
+}
+.page-subtitle {
+  text-align: center;
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 48px;
+}
+.page-subtitle code {
+  background: #333;
+  color: #03DAC6;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+/* ═══════════════════════════════════════════════
+   SECTIONS
+   ═══════════════════════════════════════════════ */
+.section {
+  margin-bottom: 64px;
+}
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #666;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #333;
+}
+
+/* ═══════════════════════════════════════════════
+   GRILLE DE TÉLÉPHONES
+   ═══════════════════════════════════════════════ */
+.phones-row {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.phone-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.phone-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.phone-num {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+/* ═══════════════════════════════════════════════
+   CADRE TÉLÉPHONE (360 × 780 dp affiché à 90%)
+   ═══════════════════════════════════════════════ */
+.phone {
+  width: 320px;
+  height: 693px;
+  background: #111;
+  border-radius: 40px;
+  padding: 10px;
+  box-shadow: var(--phone-shadow);
+  position: relative;
+  flex-shrink: 0;
+}
+.phone::before {
+  /* Punch-hole caméra */
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 14px;
+  background: #000;
+  border-radius: 50%;
+  z-index: 10;
+}
+.screen {
+  width: 100%;
+  height: 100%;
+  background: var(--background);
+  border-radius: 31px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  font-size: 13px;
+}
+
+/* ═══════════════════════════════════════════════
+   STATUS BAR
+   ═══════════════════════════════════════════════ */
+.status-bar {
+  height: 28px;
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  flex-shrink: 0;
+}
+.status-bar.light {
+  background: var(--surface);
+  border-bottom: 1px solid var(--divider);
+}
+.status-time {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.92);
+}
+.status-icons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.status-bar.light .status-time { color: var(--text-primary); }
+.status-bar.light .status-icons svg { fill: var(--text-primary); }
+.status-bar svg { fill: rgba(255,255,255,0.92); }
+
+/* ═══════════════════════════════════════════════
+   APP BAR
+   ═══════════════════════════════════════════════ */
+.app-bar {
+  height: 56px;
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  padding: 0 4px 0 4px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.app-bar-back {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.app-bar-back svg { fill: #fff; }
+.app-bar-title {
+  flex: 1;
+  font-size: 20px;
+  font-weight: 500;
+  color: #FFFFFF;
+  padding-left: 8px;
+}
+.app-bar-actions {
+  display: flex;
+}
+.icon-btn {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.icon-btn svg { fill: #FFFFFF; }
+
+/* ═══════════════════════════════════════════════
+   BODY / SCROLL AREA
+   ═══════════════════════════════════════════════ */
+.body {
+  flex: 1;
+  background: var(--background);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+}
+.body.centered {
+  justify-content: center;
+  align-items: center;
+}
+
+/* ═══════════════════════════════════════════════
+   FORM ELEMENTS
+   ═══════════════════════════════════════════════ */
+.form-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 3px;
+  font-weight: 500;
+}
+.text-field {
+  border: 1.5px solid var(--divider);
+  border-radius: 4px;
+  background: var(--surface);
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  position: relative;
+}
+.text-field.focused {
+  border-color: var(--primary);
+  border-width: 2px;
+}
+.text-field-label {
+  font-size: 10px;
+  color: var(--primary);
+  font-weight: 500;
+  margin-bottom: 1px;
+}
+.text-field-label.grey { color: var(--text-secondary); }
+.text-field-content {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+.text-field-hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.text-field-value {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+.password-dots {
+  letter-spacing: 3px;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+/* ═══════════════════════════════════════════════
+   BUTTONS
+   ═══════════════════════════════════════════════ */
+.btn-primary {
+  background: var(--primary);
+  color: #FFFFFF;
+  border-radius: 8px;
+  padding: 14px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 0;
+}
+.btn-primary.disabled {
+  background: var(--disabled-bg);
+  color: var(--disabled-text);
+}
+.btn-outlined {
+  border: 1.5px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  border-radius: 8px;
+  padding: 14px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-text {
+  color: var(--primary);
+  background: transparent;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-text.secondary { color: var(--text-secondary); }
+.btn-svg { width: 18px; height: 18px; }
+.btn-svg-white { fill: #fff; }
+.btn-svg-primary { fill: var(--primary); }
+
+/* ═══════════════════════════════════════════════
+   IMAGE PICKER CARD
+   ═══════════════════════════════════════════════ */
+.picker-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.picker-card {
+  border: 1.5px dashed #BDBDBD;
+  border-radius: 12px;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.picker-card.has-image {
+  border: none;
+  overflow: hidden;
+  padding: 0;
+}
+.picker-card svg { fill: #BDBDBD; }
+.picker-card-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.picker-img-person {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(145deg, #FFE0B2 0%, #FFCC80 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.picker-img-garment {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(145deg, #E3F2FD 0%, #90CAF9 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.picker-img-avatar {
+  font-size: 40px;
+  line-height: 1;
+}
+
+/* ═══════════════════════════════════════════════
+   BOTTOM NAVIGATION
+   ═══════════════════════════════════════════════ */
+.bottom-nav {
+  height: 60px;
+  background: var(--surface);
+  border-top: 1px solid var(--divider);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 0;
+}
+.nav-item.active .nav-icon svg { fill: var(--primary); }
+.nav-item.active .nav-label { color: var(--primary); }
+.nav-item .nav-icon svg { fill: var(--text-secondary); }
+.nav-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.nav-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ═══════════════════════════════════════════════
+   LOADING OVERLAY
+   ═══════════════════════════════════════════════ */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(246,246,246,0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 5;
+  border-radius: 31px;
+}
+.spinner {
+  width: 44px;
+  height: 44px;
+  border: 4px solid var(--divider);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════════
+   CARDS (historique)
+   ═══════════════════════════════════════════════ */
+.list-card {
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 8px;
+}
+.list-thumb {
+  width: 50px;
+  height: 50px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+.list-info { flex: 1; }
+.list-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 16px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.chip-success { background: #E8F5E9; color: #2E7D32; }
+.chip-processing { background: #FFF8E1; color: #F57F17; }
+.chip-failed { background: #FFEBEE; color: #C62828; }
+
+/* ═══════════════════════════════════════════════
+   RESULT IMAGE
+   ═══════════════════════════════════════════════ */
+.result-image {
+  width: 100%;
+  height: 230px;
+  background: linear-gradient(135deg, #E8EAF6 0%, #C5CAE9 40%, #E1BEE7 100%);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.result-ai-label {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(98,0,234,0.85);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+
+/* ═══════════════════════════════════════════════
+   FLÈCHES DE NAVIGATION ENTRE ÉCRANS
+   ═══════════════════════════════════════════════ */
+.arrow-group {
+  display: flex;
+  align-items: center;
+  padding-top: 200px;
+  padding-bottom: 0;
+  flex-shrink: 0;
+}
+.arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.arrow-line {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.arrow-shaft {
+  width: 32px;
+  height: 2px;
+  background: #555;
+}
+.arrow-head {
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 8px solid #555;
+}
+.arrow-label {
+  font-size: 10px;
+  color: #666;
+  text-align: center;
+  max-width: 60px;
+  line-height: 1.3;
+}
+
+/* ═══════════════════════════════════════════════
+   FLOW DIAGRAM LEGEND
+   ═══════════════════════════════════════════════ */
+.flow-legend {
+  background: #252525;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 48px;
+  font-size: 13px;
+  line-height: 2;
+}
+.flow-legend h3 {
+  font-size: 12px;
+  font-weight: 700;
+  color: #03DAC6;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.flow-path {
+  color: #bbb;
+  font-family: monospace;
+  font-size: 12px;
+}
+.flow-path span { color: var(--primary); font-weight: 700; }
+.flow-path .route { color: #03DAC6; }
+
+/* ═══════════════════════════════════════════════
+   FIGMA IMPORT FOOTER
+   ═══════════════════════════════════════════════ */
+.figma-footer {
+  margin-top: 80px;
+  border-top: 1px solid #333;
+  padding-top: 32px;
+}
+.figma-footer h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 16px;
+}
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.step {
+  background: #252525;
+  border-radius: 10px;
+  padding: 16px;
+  border: 1px solid #333;
+}
+.step-num {
+  width: 28px;
+  height: 28px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.step p { font-size: 12px; color: #aaa; line-height: 1.6; }
+.step code {
+  background: #333;
+  color: #03DAC6;
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 11px;
+}
+
+/* ═══════════════════════════════════════════════
+   SPACERS
+   ═══════════════════════════════════════════════ */
+.h4  { height:  4px; }
+.h6  { height:  6px; }
+.h8  { height:  8px; }
+.h10 { height: 10px; }
+.h12 { height: 12px; }
+.h14 { height: 14px; }
+.h16 { height: 16px; }
+.h20 { height: 20px; }
+.h24 { height: 24px; }
+.h28 { height: 28px; }
+.h32 { height: 32px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════
+     EN-TÊTE
+     ══════════════════════════════════════════════════════════════ -->
+<h1 class="page-title">FitAI — Enchaînement des maquettes</h1>
+<p class="page-subtitle">
+  Couleurs issues de <code>AppColors.dart</code> · primary <code>#6200EA</code> · secondary <code>#03DAC6</code>
+  · 7 états d'écran · Navigation GoRouter
+</p>
+
+<!-- ══════════════════════════════════════════════════════════════
+     LÉGENDE DU FLUX
+     ══════════════════════════════════════════════════════════════ -->
+<div class="flow-legend">
+  <h3>Navigation GoRouter</h3>
+  <div class="flow-path">
+    <span>/login</span> ──► <span>/register</span> (nouveau compte)<br>
+    <span>/login</span> ──► <span>/home</span> (connexion OK) ──► <span class="route">[tab 0]</span> TryOn vide ──► TryOn sélection ──► TryOn chargement ──► <span>/result</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└──► <span class="route">[tab 1]</span> Historique ──► <span>/result</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SECTION A — AUTHENTIFICATION
+     ══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label">A — Authentification · /login · /register</div>
+
+  <div class="phones-row">
+
+    <!-- ─── ÉCRAN 1 : LOGIN ─── -->
+    <div class="phone-group">
+      <div class="phone-label"><span class="phone-num">1</span>Connexion · <code>/login</code></div>
+      <div class="phone">
+        <div class="screen">
+          <!-- Status bar -->
+          <div class="status-bar">
+            <span class="status-time">9:41</span>
+            <div class="status-icons">
+              <svg width="14" height="10" viewBox="0 0 14 10"><rect x="0" y="3" width="2" height="7" rx="1"/><rect x="3" y="2" width="2" height="8" rx="1"/><rect x="6" y="0" width="2" height="10" rx="1"/><rect x="9" y="0" width="4" height="10" rx="1" fill-opacity="0.3"/></svg>
+              <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 2.4C5.6 2.4 3.5 3.4 2 5L0 3C2.1 1.1 4.9 0 8 0s5.9 1.1 8 3l-2 2C12.5 3.4 10.4 2.4 8 2.4zm0 3.2C6.4 5.6 5 6.3 4 7.4L2 5.4C3.5 4.1 5.7 3.2 8 3.2s4.5.9 6 2.2L12 7.4C11 6.3 9.6 5.6 8 5.6zm0 3.2c-1 0-1.9.4-2.6 1L8 12l2.6-2.8c-.7-.6-1.6-1-2.6-1z"/></svg>
+              <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0" y="1" width="22" height="10" rx="2" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="none"/><rect x="22" y="4" width="3" height="5" rx="1" fill="rgba(255,255,255,0.5)"/><rect x="1.5" y="2.5" width="16" height="7" rx="1" fill="rgba(255,255,255,0.9)"/></svg>
+            </div>
+          </div>
+          <!-- AppBar -->
+          <div class="app-bar">
+            <div class="app-bar-title" style="padding-left:16px">Connexion</div>
+          </div>
+          <!-- Body -->
+          <div class="body" style="justify-content:center;">
+            <div style="font-size:22px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Bienvenue ! 👋</div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:24px;">Connectez-vous à votre compte FitAI</div>
+
+            <div class="form-label">Nom d'utilisateur</div>
+            <div class="text-field focused">
+              <div class="text-field-label">Nom d'utilisateur</div>
+              <div class="text-field-value">loic_botsy</div>
+            </div>
+
+            <div class="h12"></div>
+            <div class="form-label">Mot de passe</div>
+            <div class="text-field">
+              <div class="text-field-label grey">Mot de passe</div>
+              <div class="password-dots">••••••••</div>
+            </div>
+
+            <div class="h20"></div>
+            <div class="btn-primary">
+              <span>Se connecter</span>
+            </div>
+            <div class="h12"></div>
+            <div class="btn-text secondary" style="font-size:13px;">Pas encore de compte ? <span style="color:var(--primary);font-weight:600;">S'inscrire</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLÈCHE -->
+    <div class="arrow-group">
+      <div class="arrow">
+        <div class="arrow-line">
+          <div class="arrow-shaft"></div>
+          <div class="arrow-head"></div>
+        </div>
+        <div class="arrow-label">Nouveau compte</div>
+      </div>
+    </div>
+
+    <!-- ─── ÉCRAN 2 : REGISTER ─── -->
+    <div class="phone-group">
+      <div class="phone-label"><span class="phone-num">2</span>Inscription · <code>/register</code></div>
+      <div class="phone">
+        <div class="screen">
+          <div class="status-bar">
+            <span class="status-time">9:41</span>
+            <div class="status-icons">
+              <svg width="14" height="10" viewBox="0 0 14 10"><rect x="0" y="3" width="2" height="7" rx="1"/><rect x="3" y="2" width="2" height="8" rx="1"/><rect x="6" y="0" width="2" height="10" rx="1"/><rect x="9" y="0" width="4" height="10" rx="1" fill-opacity="0.3"/></svg>
+              <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 2.4C5.6 2.4 3.5 3.4 2 5L0 3C2.1 1.1 4.9 0 8 0s5.9 1.1 8 3l-2 2C12.5 3.4 10.4 2.4 8 2.4zm0 3.2C6.4 5.6 5 6.3 4 7.4L2 5.4C3.5 4.1 5.7 3.2 8 3.2s4.5.9 6 2.2L12 7.4C11 6.3 9.6 5.6 8 5.6zm0 3.2c-1 0-1.9.4-2.6 1L8 12l2.6-2.8c-.7-.6-1.6-1-2.6-1z"/></svg>
+              <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0" y="1" width="22" height="10" rx="2" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="none"/><rect x="22" y="4" width="3" height="5" rx="1" fill="rgba(255,255,255,0.5)"/><rect x="1.5" y="2.5" width="16" height="7" rx="1" fill="rgba(255,255,255,0.9)"/></svg>
+            </div>
+          </div>
+          <div class="app-bar">
+            <div class="app-bar-back">
+              <svg width="24" height="24" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+            </div>
+            <div class="app-bar-title">Inscription</div>
+          </div>
+          <div class="body" style="justify-content:center;">
+            <div style="font-size:20px;font-weight:700;color:var(--text-primary);margin-bottom:20px;">Créer un compte</div>
+
+            <div class="text-field">
+              <div class="text-field-label">Nom d'utilisateur</div>
+              <div class="text-field-hint" style="color:#bbb;">ex : loic_botsy</div>
+            </div>
+            <div class="h8"></div>
+            <div class="text-field focused">
+              <div class="text-field-label">Adresse email</div>
+              <div class="text-field-value">loic.botsy@hotmail.com</div>
+            </div>
+            <div class="h8"></div>
+            <div class="text-field">
+              <div class="text-field-label grey">Mot de passe</div>
+              <div class="text-field-hint" style="color:#bbb;">8 caractères minimum</div>
+            </div>
+            <div class="h20"></div>
+            <div class="btn-primary">Créer un compte</div>
+            <div class="h10"></div>
+            <div class="btn-text secondary" style="font-size:13px;">Déjà un compte ? <span style="color:var(--primary);font-weight:600;">Se connecter</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /phones-row -->
+</div><!-- /section A -->
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     SECTION B — ÉCRAN TRY-ON (3 états)
+     ══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label">B — Essayage virtuel · /home [tab Essayer] · États progressifs</div>
+
+  <div class="phones-row">
+
+    <!-- ─── ÉCRAN 3 : TRYON VIDE ─── -->
+    <div class="phone-group">
+      <div class="phone-label"><span class="phone-num">3</span>TryOn — état vide</div>
+      <div class="phone">
+        <div class="screen">
+          <div class="status-bar">
+            <span class="status-time">9:43</span>
+            <div class="status-icons">
+              <svg width="14" height="10" viewBox="0 0 14 10"><rect x="0" y="3" width="2" height="7" rx="1"/><rect x="3" y="2" width="2" height="8" rx="1"/><rect x="6" y="0" width="2" height="10" rx="1"/><rect x="9" y="0" width="4" height="10" rx="1" fill-opacity="0.3"/></svg>
+              <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 2.4C5.6 2.4 3.5 3.4 2 5L0 3C2.1 1.1 4.9 0 8 0s5.9 1.1 8 3l-2 2C12.5 3.4 10.4 2.4 8 2.4zm0 3.2C6.4 5.6 5 6.3 4 7.4L2 5.4C3.5 4.1 5.7 3.2 8 3.2s4.5.9 6 2.2L12 7.4C11 6.3 9.6 5.6 8 5.6zm0 3.2c-1 0-1.9.4-2.6 1L8 12l2.6-2.8c-.7-.6-1.6-1-2.6-1z"/></svg>
+              <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0" y="1" width="22" height="10" rx="2" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="none"/><rect x="22" y="4" width="3" height="5" rx="1" fill="rgba(255,255,255,0.5)"/><rect x="1.5" y="2.5" width="16" height="7" rx="1" fill="rgba(255,255,255,0.9)"/></svg>
+            </div>
+          </div>
+          <div class="app-bar">
+            <div class="app-bar-title" style="padding-left:16px;">Bonjour, Loïc 👋</div>
+            <div class="app-bar-actions">
+              <div class="icon-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="body" style="padding:14px 12px; gap:0;">
+            <!-- Picker person -->
+            <div class="picker-title">Votre photo</div>
+            <div class="h4"></div>
+            <div class="picker-card" style="height:120px;">
+              <svg width="36" height="36" viewBox="0 0 24 24"><path d="M14.5 11.5c0 1.38-1.12 2.5-2.5 2.5S9.5 12.88 9.5 11.5 10.62 9 12 9s2.5 1.12 2.5 2.5zM22 8v12a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h3l1.83-2h6.34L17 6h3a2 2 0 012 2zm-10 9c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5z"/></svg>
+              <div class="picker-card-text">Appuyez pour sélectionner</div>
+            </div>
+            <div class="h10"></div>
+            <!-- Picker garment -->
+            <div class="picker-title">Photo du vêtement</div>
+            <div class="h4"></div>
+            <div class="picker-card" style="height:120px;">
+              <svg width="36" height="36" viewBox="0 0 24 24"><path d="M14.5 11.5c0 1.38-1.12 2.5-2.5 2.5S9.5 12.88 9.5 11.5 10.62 9 12 9s2.5 1.12 2.5 2.5zM22 8v12a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h3l1.83-2h6.34L17 6h3a2 2 0 012 2zm-10 9c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5z"/></svg>
+              <div class="picker-card-text">Appuyez pour sélectionner</div>
+            </div>
+            <div class="h10"></div>
+            <!-- Description -->
+            <div class="text-field" style="margin-bottom:0;">
+              <div class="text-field-label grey">Description du vêtement (optionnel)</div>
+              <div class="text-field-hint" style="color:#ccc;">Ex: t-shirt rouge à manches courtes...</div>
+            </div>
+            <div class="h16"></div>
+            <!-- Bouton DISABLED -->
+            <div class="btn-primary disabled">Générer</div>
+          </div>
+          <!-- Bottom nav -->
+          <div class="bottom-nav">
+            <div class="nav-item active">
+              <div class="nav-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24"><path d="M21 6.5C21 5.12 19.88 4 18.5 4h-1.77l-.28-.45C16.22 3.21 15.71 3 15.18 3H8.82c-.53 0-1.04.21-1.27.55L7.27 4H5.5C4.12 4 3 5.12 3 6.5V19c0 1.38 1.12 2.5 2.5 2.5h13c1.38 0 2.5-1.12 2.5-2.5V6.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm3-5c0 1.66-1.34 3-3 3s-3-1.34-3-3 1.34-3 3-3 3 1.34 3 3z"/></svg>
+              </div>
+              <div class="nav-label">Essayer</div>
+            </div>
+            <div class="nav-item">
+              <div class="nav-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24"><path d="M13 3a9 9 0 00-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0013 21a9 9 0 000-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+              </div>
+              <div class="nav-label">Historique</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLÈCHE -->
+    <div class="arrow-group">
+      <div class="arrow">
+        <div class="arrow-line"><div class="arrow-shaft"></div><div class="arrow-head"></div></div>
+        <div class="arrow-label">Sélection images</div>
+      </div>
+    </div>
+
+    <!-- ─── ÉCRAN 4 : TRYON SÉLECTION ─── -->
+    <div class="phone-group">
+      <div class="phone-label"><span class="phone-num">4</span>TryOn — images sélectionnées</div>
+      <div class="phone">
+        <div class="screen">
+          <div class="status-bar">
+            <span class="status-time">9:45</span>
+            <div class="status-icons">
+              <svg width="14" height="10" viewBox="0 0 14 10"><rect x="0" y="3" width="2" height="7" rx="1"/><rect x="3" y="2" width="2" height="8" rx="1"/><rect x="6" y="0" width="2" height="10" rx="1"/><rect x="9" y="0" width="4" height="10" rx="1" fill-opacity="0.3"/></svg>
+              <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 2.4C5.6 2.4 3.5 3.4 2 5L0 3C2.1 1.1 4.9 0 8 0s5.9 1.1 8 3l-2 2C12.5 3.4 10.4 2.4 8 2.4zm0 3.2C6.4 5.6 5 6.3 4 7.4L2 5.4C3.5 4.1 5.7 3.2 8 3.2s4.5.9 6 2.2L12 7.4C11 6.3 9.6 5.6 8 5.6zm0 3.2c-1 0-1.9.4-2.6 1L8 12l2.6-2.8c-.7-.6-1.6-1-2.6-1z"/></svg>
+              <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0" y="1" width="22" height="10" rx="2" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="none"/><rect x="22" y="4" width="3" height="5" rx="1" fill="rgba(255,255,255,0.5)"/><rect x="1.5" y="2.5" width="16" height="7" rx="1" fill="rgba(255,255,255,0.9)"/></svg>
+            </div>
+          </div>
+          <div class="app-bar">
+            <div class="app-bar-title" style="padding-left:16px;">Bonjour, Loïc 👋</div>
+            <div class="app-bar-actions"><div class="icon-btn"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg></div></div>
+          </div>
+          <div class="body" style="padding:14px 12px; gap:0;">
+            <div class="picker-title">Votre photo</div>
+            <div class="h4"></div>
+            <div class="picker-card has-image" style="height:120px;">
+              <div class="picker-img-person">
+                <span class="picker-img-avatar">🧑‍💼</span>
+              </div>
+            </div>
+            <div class="h10"></div>
+            <div class="picker-title">Photo du vêtement</div>
+            <div class="h4"></div>
+            <div class="picker-card has-image" style="height:120px;">
+              <div class="picker-img-garment">
+                <span class="picker-img-avatar">👕</span>
+              </div>
+            </div>
+            <div class="h10"></div>
+            <div class="text-field focused" style="margin-bottom:0;">
+              <div class="text-field-label">Description du vêtement</div>
+              <div class="text-field-value">T-shirt rouge à manches courtes</div>
+            </div>
+            <div class="h16"></div>
+            <!-- Bouton ACTIF -->
+            <div class="btn-primary" style="box-shadow: 0 4px 12px rgba(98,0,234,0.4);">
+              <svg class="btn-svg btn-svg-white" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+              Générer
+            </div>
+          </div>
+          <div class="bottom-nav">
+            <div class="nav-item active"><div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M21 6.5C21 5.12 19.88 4 18.5 4h-1.77l-.28-.45C16.22 3.21 15.71 3 15.18 3H8.82c-.53 0-1.04.21-1.27.55L7.27 4H5.5C4.12 4 3 5.12 3 6.5V19c0 1.38 1.12 2.5 2.5 2.5h13c1.38 0 2.5-1.12 2.5-2.5V6.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm3-5c0 1.66-1.34 3-3 3s-3-1.34-3-3 1.34-3 3-3 3 1.34 3 3z"/></svg></div><div class="nav-label">Essayer</div></div>
+            <div class="nav-item"><div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M13 3a9 9 0 00-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0013 21a9 9 0 000-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg></div><div class="nav-label">Historique</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLÈCHE -->
+    <div class="arrow-group">
+      <div class="arrow">
+        <div class="arrow-line"><div class="arrow-shaft"></div><div class="arrow-head"></div></div>
+        <div class="arrow-label">Clic « Générer »</div>
+      </div>
+    </div>
+
+    <!-- ─── ÉCRAN 5 : TRYON LOADING ─── -->
+    <div class="phone-group">
+      <div class="phone-label"><span class="phone-num">5</span>TryOn — IA en cours</div>
+      <div class="phone">
+        <div class="screen">
+          <div class="status-bar"><span class="status-time">9:45</span><div class="status-icons"><svg width="14" height="10" viewBox="0 0 14 10"><rect x="0" y="3" width="2" height="7" rx="1"/><rect x="3" y="2" width="2" height="8" rx="1"/><rect x="6" y="0" width="2" height="10" rx="1"/></svg><svg width="25" height="12" viewBox="0 0 25 12"><rect x="0" y="1" width="22" height="10" rx="2" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="none"/><rect x="22" y="4" width="3" height="5" rx="1" fill="rgba(255,255,255,0.5)"/><rect x="1.5" y="2.5" width="10" height="7" rx="1" fill="rgba(255,255,255,0.9)"/></svg></div></div>
+          <div class="app-bar"><div class="app-bar-title" style="padding-left:16px;">Bonjour, Loïc 👋</div></div>
+          <div class="body" style="padding:14px 12px; gap:0; position:relative;">
+            <!-- Contenu flouté en arrière-plan -->
+            <div style="opacity:0.2;">
+              <div class="picker-title">Votre photo</div>
+              <div class="h4"></div>
+              <div class="picker-card has-image" style="height:120px;"><div class="picker-img-person"><span class="picker-img-avatar">🧑‍💼</span></div></div>
+              <div class="h10"></div>
+              <div class="picker-title">Photo du vêtement</div>
+              <div class="h4"></div>
+              <div class="picker-card has-image" style="height:120px;"><div class="picker-img-garment"><span class="picker-img-avatar">👕</span></div></div>
+            </div>
+            <!-- Overlay de chargement -->
+            <div class="loading-overlay">
+              <div style="font-size:36px;margin-bottom:4px;">🤖</div>
+              <div class="spinner"></div>
+              <div class="loading-text">Génération en cours<br>(30-60 secondes)...</div>
+              <div style="font-size:11px;color:var(--text-secondary);text-align:center;max-width:180px;">Le modèle IDM-VTON analyse vos images</div>
+            </div>
+          </div>
+          <div class="bottom-nav">
+            <div class="nav-item active"><div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M21 6.5C21 5.12 19.88 4 18.5 4h-1.77l-.28-.45C16.22 3.21 15.71 3 15.18 3H8.82c-.53 0-1.04.21-1.27.55L7.27 4H5.5C4.12 4 3 5.12 3 6.5V19c0 1.38 1.12 2.5 2.5 2.5h13c1.38 0 2.5-1.12 2.5-2.5V6.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm3-5c0 1.66-1.34 3-3 3s-3-1.34-3-3 1.34-3 3-3 3 1.34 3 3z"/></svg></div><div class="nav-label">Essayer</div></div>
+            <div class="nav-item"><div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M13 3a9 9 0 00-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0013 21a9 9 0 000-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg></div><div class="nav-label">Historique</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /phones-row -->
+</div><!-- /section B -->
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     SECTION C — RÉSULTAT & HISTORIQUE
+     ══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label">C — Résultat & Historique · /result · /home [tab Historique]</div>
+
+  <div class="phones-row">
+
+    <!-- ─── ÉCRAN 6 : RESULT ─── -->
+    <div class="phone-group">
+      <div class="phone-label"><span class="phone-num">6</span>Résultat · <code>/result</code></div>
+      <div class="phone">
+        <div class="screen">
+          <div class="status-bar"><span class="status-time">9:47</span><div class="status-icons"><svg width="14" height="10" viewBox="0 0 14 10"><rect x="0" y="3" width="2" height="7" rx="1"/><rect x="3" y="2" width="2" height="8" rx="1"/><rect x="6" y="0" width="2" height="10" rx="1"/></svg><svg width="25" height="12" viewBox="0 0 25 12"><rect x="0" y="1" width="22" height="10" rx="2" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="none"/><rect x="22" y="4" width="3" height="5" rx="1" fill="rgba(255,255,255,0.5)"/><rect x="1.5" y="2.5" width="18" height="7" rx="1" fill="rgba(255,255,255,0.9)"/></svg></div></div>
+          <div class="app-bar">
+            <div class="app-bar-back"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></div>
+            <div class="app-bar-title">Résultat</div>
+          </div>
+          <div class="body" style="padding:16px 14px; gap:0;">
+            <!-- Image résultat IA -->
+            <div class="result-image">
+              <div class="result-ai-label">✨ Généré par IA</div>
+              <!-- Représentation stylisée du résultat -->
+              <div style="text-align:center;">
+                <div style="font-size:52px;line-height:1;">🧑‍💼</div>
+                <div style="margin-top:-8px;font-size:28px;">👕</div>
+                <div style="font-size:11px;color:#6200EA;font-weight:600;margin-top:8px;">IDM-VTON · 47s</div>
+              </div>
+            </div>
+            <!-- Bouton Télécharger -->
+            <div class="btn-primary" style="margin-bottom:10px;box-shadow:0 4px 12px rgba(98,0,234,0.35);">
+              <svg class="btn-svg btn-svg-white" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+              Télécharger l'image
+            </div>
+            <!-- Bouton Partager -->
+            <div class="btn-outlined" style="margin-bottom:10px;">
+              <svg class="btn-svg btn-svg-primary" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+              Partager
+            </div>
+            <!-- Lien retour -->
+            <div class="btn-text" style="color:var(--text-secondary);font-size:13px;">
+              <svg class="btn-svg" style="fill:var(--text-secondary);" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+              Faire un nouvel essayage
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLÈCHE -->
+    <div class="arrow-group" style="padding-top: 280px;">
+      <div class="arrow">
+        <div class="arrow-line"><div class="arrow-shaft" style="width:48px;"></div><div class="arrow-head"></div></div>
+        <div class="arrow-label">Onglet Historique</div>
+      </div>
+    </div>
+
+    <!-- ─── ÉCRAN 7 : HISTORY ─── -->
+    <div class="phone-group">
+      <div class="phone-label"><span class="phone-num">7</span>Historique · <code>/home [tab 1]</code></div>
+      <div class="phone">
+        <div class="screen">
+          <div class="status-bar"><span class="status-time">9:52</span><div class="status-icons"><svg width="14" height="10" viewBox="0 0 14 10"><rect x="0" y="3" width="2" height="7" rx="1"/><rect x="3" y="2" width="2" height="8" rx="1"/><rect x="6" y="0" width="2" height="10" rx="1"/></svg><svg width="25" height="12" viewBox="0 0 25 12"><rect x="0" y="1" width="22" height="10" rx="2" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="none"/><rect x="22" y="4" width="3" height="5" rx="1" fill="rgba(255,255,255,0.5)"/><rect x="1.5" y="2.5" width="20" height="7" rx="1" fill="rgba(255,255,255,0.9)"/></svg></div></div>
+          <div class="app-bar">
+            <div class="app-bar-title" style="padding-left:16px;">Bonjour, Loïc 👋</div>
+            <div class="app-bar-actions"><div class="icon-btn"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg></div></div>
+          </div>
+          <div class="body" style="padding:12px; gap:0;">
+            <!-- Card 1 -->
+            <div class="list-card">
+              <div class="list-thumb" style="background:linear-gradient(145deg,#E8EAF6,#C5CAE9);">✨</div>
+              <div class="list-info">
+                <div class="list-title">Essayage du 22/06/2026</div>
+                <div><span class="chip chip-success">Terminé</span></div>
+              </div>
+              <svg width="20" height="20" viewBox="0 0 24 24" style="fill:#BDBDBD;flex-shrink:0;"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+            </div>
+            <!-- Card 2 -->
+            <div class="list-card">
+              <div class="list-thumb" style="background:linear-gradient(145deg,#E8EAF6,#C5CAE9);">✨</div>
+              <div class="list-info">
+                <div class="list-title">Essayage du 20/06/2026</div>
+                <div><span class="chip chip-success">Terminé</span></div>
+              </div>
+              <svg width="20" height="20" viewBox="0 0 24 24" style="fill:#BDBDBD;flex-shrink:0;"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+            </div>
+            <!-- Card 3 -->
+            <div class="list-card">
+              <div class="list-thumb" style="background:#F5F5F5;font-size:18px;">🖼️</div>
+              <div class="list-info">
+                <div class="list-title">Essayage du 15/06/2026</div>
+                <div><span class="chip chip-failed">Échoué</span></div>
+              </div>
+              <svg width="20" height="20" viewBox="0 0 24 24" style="fill:#BDBDBD;flex-shrink:0;"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+            </div>
+            <!-- Card 4 -->
+            <div class="list-card">
+              <div class="list-thumb" style="background:linear-gradient(145deg,#E8EAF6,#C5CAE9);">✨</div>
+              <div class="list-info">
+                <div class="list-title">Essayage du 10/06/2026</div>
+                <div><span class="chip chip-success">Terminé</span></div>
+              </div>
+              <svg width="20" height="20" viewBox="0 0 24 24" style="fill:#BDBDBD;flex-shrink:0;"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+            </div>
+            <!-- Card 5 -->
+            <div class="list-card" style="opacity:0.5;">
+              <div class="list-thumb" style="background:#FFF8E1;font-size:18px;">⏳</div>
+              <div class="list-info">
+                <div class="list-title">Essayage du 05/06/2026</div>
+                <div><span class="chip chip-processing">En cours</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="bottom-nav">
+            <div class="nav-item"><div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M21 6.5C21 5.12 19.88 4 18.5 4h-1.77l-.28-.45C16.22 3.21 15.71 3 15.18 3H8.82c-.53 0-1.04.21-1.27.55L7.27 4H5.5C4.12 4 3 5.12 3 6.5V19c0 1.38 1.12 2.5 2.5 2.5h13c1.38 0 2.5-1.12 2.5-2.5V6.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm3-5c0 1.66-1.34 3-3 3s-3-1.34-3-3 1.34-3 3-3 3 1.34 3 3z"/></svg></div><div class="nav-label">Essayer</div></div>
+            <div class="nav-item active"><div class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M13 3a9 9 0 00-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0013 21a9 9 0 000-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg></div><div class="nav-label">Historique</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /phones-row -->
+</div><!-- /section C -->
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     FOOTER — IMPORT FIGMA
+     ══════════════════════════════════════════════════════════════ -->
+<div class="figma-footer">
+  <h3>📥 Importer dans Figma — 4 étapes</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <p>Ouvre <strong>Figma</strong> → Community → Cherche le plugin <code>HTML to Figma</code> → Installe-le</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <p>Ouvre ce fichier dans Chrome → <code>Ctrl+A</code> puis <code>Ctrl+C</code> pour copier tout le HTML de la page</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <p>Dans Figma : <code>Plugins</code> → <code>HTML to Figma</code> → Colle le HTML → Clique <strong>Import</strong></p>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <p>Chaque téléphone devient un <strong>Frame Figma</strong> éditable. Remplace les emojis par tes vraies screenshots via <code>Fill → Image</code></p>
+    </div>
+  </div>
+  <div style="margin-top:20px;font-size:12px;color:#555;line-height:1.8;">
+    <strong style="color:#888;">Alternative sans plugin :</strong>
+    Ouvre ce fichier dans Chrome · Zoom 100% · <code>F12</code> → Device Toolbar →
+    choisir « Responsive 360×800 » · Prendre un screenshot de chaque section · Coller en tant que Frame dans Figma.<br>
+    <strong style="color:#888;">Couleurs Figma :</strong>
+    Primary <code style="color:#6200EA;">#6200EA</code> ·
+    Secondary <code style="color:#03DAC6;">#03DAC6</code> ·
+    Background <code>#F6F6F6</code> ·
+    Surface <code>#FFFFFF</code> ·
+    Error <code style="color:#B00020;">#B00020</code> ·
+    Success <code style="color:#00C853;">#00C853</code>
+  </div>
+</div>
+
+</body>
+</html>
