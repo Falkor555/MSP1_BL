@@ -123,14 +123,14 @@ StyleShop SAS · Juin 2026
 
 </div>
 
-<!-- 
+<!--
 NOTES ORATEUR — Slide 1 [~30 secondes]
 
 "Bonjour. Je m'appelle Loïc Botsy et je suis candidat au Titre Professionnel Concepteur Développeur d'Applications de niveau 6.
 
 Durant ma période en entreprise chez StyleShop SAS, j'ai développé FitAI : une application mobile d'essayage virtuel de vêtements propulsée par l'intelligence artificielle.
 
-Je vais vous présenter ce projet en une quinzaine de minutes, puis je serai disponible pour répondre à vos questions."
+Je vais vous présenter ce projet en une vingtaine de minutes, organisé en trois parties : la conception, la réalisation technique, puis une conclusion sur les principes de programmation orientée objet et les perspectives d'évolution."
 -->
 
 ---
@@ -182,7 +182,7 @@ Sophie Mercier — PDG
 
 </div>
 
-<!-- 
+<!--
 NOTES ORATEUR — Slide 2 [~1 minute]
 
 "StyleShop est une startup parisienne spécialisée dans la vente de vêtements de mode en ligne via une application mobile. Elle compte 14 collaborateurs dont une équipe technique de 6 personnes.
@@ -235,7 +235,7 @@ L'utilisateur **visualise le vêtement porté sur sa propre photo** avant d'ache
 
 </div>
 
-<!-- 
+<!--
 NOTES ORATEUR — Slide 3 [~1 min 30]
 
 "Le problème que StyleShop m'a demandé de résoudre est très concret : 35% de leurs commandes sont retournées, principalement parce que les clients ne savent pas à quoi ressemblera le vêtement sur eux.
@@ -248,10 +248,10 @@ Les fonctionnalités prioritaires ont été définies avec Sophie Mercier, la Pr
 ---
 
 <!-- ═══════════════════════════════════════════════════════════
-     SLIDE 4 — ARCHITECTURE
+     SLIDE 4 — ARCHITECTURE TECHNIQUE
      ═══════════════════════════════════════════════════════════ -->
 
-## Architecture technique — Choix et justifications
+## Architecture technique — Vue globale
 
 <div class="cols-2">
 
@@ -260,7 +260,7 @@ Les fonctionnalités prioritaires ont été définies avec Sophie Mercier, la Pr
 ```
 📱 Flutter 3 · Riverpod · GoRouter
      │
-     │ HTTP Bearer JWT
+     │ HTTPS · Bearer JWT
      │ multipart/form-data
      ▼
 ⚙️  Django 5 · DRF · SimpleJWT
@@ -276,25 +276,33 @@ Les fonctionnalités prioritaires ont été définies avec Sophie Mercier, la Pr
                         ~30-90 s
 ```
 
+**Architecture N-tiers** : présentation → API → service → persistance
+
 </div>
 
 <div>
 
-### Pourquoi ces technologies ?
+### Justification des choix
 
-| Choix | Alternative écartée | Raison |
-|-------|-------------------|--------|
-| **Flutter** | React Native | Déjà utilisé chez StyleShop |
+| Choix | Alternative | Raison |
+|-------|-------------|--------|
+| **Flutter** | React Native | Stack existante StyleShop |
 | **Django 5** | FastAPI | ORM + SimpleJWT intégrés |
 | **PostgreSQL** | MySQL | UUID natif + ACID |
-| **JWT** | Sessions | Mobile stateless |
+| **JWT stateless** | Sessions | Mobile multi-appareils |
 | **IDM-VTON** | API payante | Budget startup (gratuit) |
 
-</div>
+### Modèle de déploiement
+
+- **Backend** : conteneur Docker
+- **Media** : volume persistant local → S3 (future)
+- **IA** : HuggingFace Spaces (cloud)
 
 </div>
 
-<!-- 
+</div>
+
+<!--
 NOTES ORATEUR — Slide 4 [~2 minutes]
 
 "L'architecture est en 4 couches.
@@ -303,17 +311,258 @@ D'abord, le frontend mobile en Flutter 3 avec Riverpod pour la gestion d'état. 
 
 Au centre, l'API Django 5 avec Django REST Framework. Django a été privilégié à FastAPI pour son ORM puissant et pour l'intégration native de SimpleJWT — ce qui nous a économisé beaucoup de temps sur la partie authentification.
 
-Pour la persistance, PostgreSQL 15 — le standard de StyleShop en production, avec un support natif des UUIDs utilisés comme clés primaires.
+Pour la persistance, PostgreSQL 15 avec support natif des UUIDs. Et enfin, le modèle open-source IDM-VTON hébergé sur HuggingFace Spaces — gratuit et état de l'art pour le virtual try-on.
 
-Et enfin, la brique d'intelligence artificielle : le modèle open-source IDM-VTON hébergé sur HuggingFace Spaces. C'est un modèle de diffusion, état de l'art pour le virtual try-on. Il est gratuit — ce qui était une contrainte budgétaire importante pour un prototype.
-
-La communication entre Django et HuggingFace se fait via un client Gradio, avec un timeout de 5 minutes pour gérer les temps de génération longs."
+C'est une architecture N-tiers classique, avec une séparation nette des responsabilités à chaque couche."
 -->
 
 ---
 
 <!-- ═══════════════════════════════════════════════════════════
-     SLIDE 5 — GESTION DE PROJET
+     SLIDE 5 — MODÈLE DE DONNÉES
+     ═══════════════════════════════════════════════════════════ -->
+
+## Modèle de données — Entités et relations
+
+<div class="cols-2">
+
+<div>
+
+### Diagramme Entité-Relation
+
+```
+┌────────────────┐           ┌───────────────────────┐
+│     User       │  1 ──── N │    TryOnRequest        │
+│────────────────│           │───────────────────────│
+│ id         PK  │           │ id (UUID)          PK  │
+│ username       │           │ user_id            FK  │
+│ email          │           │ person_image           │
+│ password (hash)│           │ garment_image          │
+└────────────────┘           │ result_image           │
+                              │ description            │
+                              │ status  ──────────┐   │
+                              │ created_at         │   │
+                              └───────────────────┘   │
+                                                   │
+                              ┌────────────────────┘
+                              │  Status <<enum>>
+                              │  PENDING
+                              │  PROCESSING
+                              │  COMPLETED
+                              │  FAILED
+                              └────────────────
+```
+
+</div>
+
+<div>
+
+### Décisions de conception
+
+**UUID comme clé primaire**
+→ Non prédictible : impossible d'énumérer les ressources d'autrui (résistance BOLA)
+→ Distribué : pas de contention sur auto-incrément
+
+**Enum `Status`**
+→ Machine à états explicite : transitions contrôlées
+→ Traçabilité en base à chaque étape de la génération IA
+
+**`on_delete=CASCADE` sur `user_id`**
+→ Droit à l'effacement RGPD : suppression du compte → toutes les images supprimées automatiquement
+
+**Séparation `person_image` / `garment_image` / `result_image`**
+→ Validator MIME uniquement sur les entrées utilisateur, pas sur la sortie IA
+
+</div>
+
+</div>
+
+<!--
+NOTES ORATEUR — Slide 5 [~1 min 30]
+
+"Le modèle de données ne comporte que deux tables principales : User, fournie par Django, et TryOnRequest, que j'ai créée.
+
+Quatre décisions de conception méritent d'être expliquées.
+
+Premièrement, l'UUID comme clé primaire. Contrairement à un entier auto-incrémenté, un UUID v4 est impossible à deviner — ce qui protège contre les attaques BOLA où un attaquant modifie l'identifiant dans une URL pour accéder aux ressources d'un autre utilisateur.
+
+Deuxièmement, l'enum Status. Le cycle de vie d'un essayage passe par quatre états : PENDING à la création, PROCESSING pendant l'appel IA, COMPLETED en cas de succès, FAILED en cas d'erreur. C'est une machine à états explicite qui facilite le débogage et la traçabilité.
+
+Troisièmement, la cascade de suppression sur la clé étrangère utilisateur — essentielle pour le RGPD.
+
+Quatrièmement, la séparation des champs images : person et garment viennent de l'utilisateur et sont validés, result_image est générée par le backend et n'a pas besoin d'être validée."
+-->
+
+---
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 6 — DIAGRAMME DE CLASSES
+     ═══════════════════════════════════════════════════════════ -->
+
+## Conception OO — Principales classes et relations
+
+<div class="cols-2">
+
+<div>
+
+### Côté Django (backend)
+
+```
+ModelViewSet (DRF)
+    ▲
+    │ héritage
+TryOnViewSet
+    │ utilise
+    ├──► TryOnSerializer ──► (ModelSerializer)
+    │
+    └──► TryOnService
+              │ lève
+              └──► TryOnAPIException ──► (Exception)
+
+ModelSerializer (DRF)
+    ▲
+TryOnSerializer
+    │ appelle
+    └──► validate_image_file()   (Validator)
+
+ProtectedMediaView
+    │ vérifie
+    └──► JWT + chemin fichier ∈ dossier user
+```
+
+</div>
+
+<div>
+
+### Côté Flutter (frontend)
+
+```
+AsyncNotifier<AuthState> (Riverpod)
+    ▲
+    │ héritage
+AuthNotifier
+    │ utilise
+    └──► ApiService (HTTP client)
+              │
+              └──► AuthInterceptor
+                        │ gère
+                        └──► refresh JWT automatique
+
+AsyncNotifier<TryOnState> (Riverpod)
+    ▲
+    │ héritage
+TryOnNotifier
+    │ utilise
+    └──► ApiService
+```
+
+**Pattern Repository** : `ApiService` isole Flutter de l'API HTTP
+
+**Immutabilité** : `AuthState` et `TryOnState` sont des `data class` (Dart `sealed class`)
+
+</div>
+
+</div>
+
+<!--
+NOTES ORATEUR — Slide 6 [~1 min 30]
+
+"Je vais vous présenter les principales classes de l'application et leurs relations.
+
+Côté Django, l'architecture suit le pattern MVT de Django complété par une couche Service.
+
+TryOnViewSet hérite de ModelViewSet de Django REST Framework — on récupère gratuitement les opérations CRUD, la pagination, et les codes HTTP corrects. Il utilise TryOnSerializer pour valider et sérialiser les données, et délègue la logique métier IA à TryOnService.
+
+TryOnService est la classe la plus importante du backend : c'est elle qui encapsule toute l'interaction avec HuggingFace. Si demain on change de fournisseur IA, seule cette classe change.
+
+Côté Flutter, j'ai utilisé le pattern Riverpod avec des AsyncNotifiers. AuthNotifier gère le cycle de vie du token JWT. TryOnNotifier gère l'état de la génération. Les deux passent par ApiService qui centralise la configuration HTTP — notamment l'injection automatique du Bearer token via l'AuthInterceptor."
+-->
+
+---
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 7 — FLUX MÉTIER / DIAGRAMME DE SÉQUENCE
+     ═══════════════════════════════════════════════════════════ -->
+
+## Flux métier — Diagramme de séquence : génération IA
+
+<div class="cols-2">
+
+<div>
+
+```
+Flutter      Django API      TryOnService    HuggingFace
+  │               │               │               │
+  │─── POST ─────►│               │               │
+  │  /api/tryon/  │               │               │
+  │  (2 images)   │               │               │
+  │               │ validate()    │               │
+  │               │ Sérialise     │               │
+  │               │ INSERT PENDING│               │
+  │               │               │               │
+  │               │──generate()──►│               │
+  │               │               │──predict()───►│
+  │               │               │   ~30-90 s    │
+  │               │               │◄──result[0]───│
+  │               │               │               │
+  │               │ save media/   │               │
+  │               │ UPDATE COMPLETED               │
+  │◄─ HTTP 201 ───│               │               │
+  │  {result_url} │               │               │
+  │               │               │               │
+  │ navigate →    │               │               │
+  │ ResultScreen  │               │               │
+```
+
+</div>
+
+<div>
+
+### Points de défaillance gérés
+
+**Timeout HuggingFace** (cold start 90s)
+→ Délai configuré à 300s (5 min)
+→ Retour HTTP 502 + `request_id` si dépassé
+
+**Erreur IA (quota, réseau)**
+→ `TryOnAPIException` levée par le service
+→ Statut `FAILED` enregistré en base
+→ Message d'erreur retourné à Flutter
+
+**Requête double (double tap)**
+→ `AbsorbPointer` Flutter bloque toutes les interactions pendant la génération
+→ Impossible de soumettre deux fois
+
+### États de l'essayage
+
+```
+[PENDING] → [PROCESSING] → [COMPLETED]
+                 │
+                 └──────────► [FAILED]
+```
+
+</div>
+
+</div>
+
+<!--
+NOTES ORATEUR — Slide 7 [~1 min 30]
+
+"Le flux de génération est le cœur fonctionnel de l'application. Laissez-moi vous le décrire étape par étape.
+
+Flutter envoie les deux images en multipart à l'API Django. Django valide les données via le serializer et les validators MIME, enregistre en base avec le statut PENDING, puis délègue à TryOnService.
+
+TryOnService appelle synchroniquement HuggingFace via le client Gradio. C'est ici qu'on attend — entre 30 et 90 secondes selon l'état du modèle IDM-VTON.
+
+Une fois le résultat reçu, Django sauvegarde l'image dans le dossier media, met à jour le statut en COMPLETED, et retourne l'URL de l'image à Flutter. Flutter navigue alors automatiquement vers l'écran ResultScreen.
+
+Trois points de défaillance ont été anticipés : le timeout de HuggingFace géré à 300 secondes, les erreurs IA capturées et converties en exception typée, et la double soumission bloquée par AbsorbPointer côté Flutter."
+-->
+
+---
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 8 — GESTION DE PROJET
      ═══════════════════════════════════════════════════════════ -->
 
 ## Gestion de projet — Méthode Agile Scrum
@@ -326,62 +575,217 @@ La communication entre Django et HuggingFace se fait via un client Gradio, avec 
 
 | Sprint | Focus | Dates |
 |--------|-------|-------|
-| S0 | Cadrage, maquettes, setup | 7–18 avr. |
-| S1 | Auth backend (JWT) | 21 avr.–2 mai |
-| S2 | API TryOn + HuggingFace | 5–16 mai |
-| S3 | Frontend Flutter | 19–30 mai |
-| S4 | Sécurité + Historique | 2–13 juin |
-| S5 | Tests + Documentation | 16–27 juin |
+| S0 | Cadrage, maquettes Figma, setup | 7–18 avr. |
+| S1 | Auth backend (JWT + profil) | 21 avr.–2 mai |
+| S2 | API TryOn + intégration HuggingFace | 5–16 mai |
+| S3 | Frontend Flutter (5 écrans) | 19–30 mai |
+| S4 | Sécurité + Historique + Médias | 2–13 juin |
+| S5 | Tests + Documentation + Recette | 16–27 juin |
 
 ### Outils
 
 <span class="chip">GitHub</span>
-<span class="chip">Jira</span>
 <span class="chip">Figma</span>
-<span class="chip">Postman</span>
-<span class="chip">Slack</span>
+<span class="chip">Insomnia</span>
+<span class="chip">Jira</span>
 
 </div>
 
 <div>
 
-### Kanban Sprint 3 (extrait)
+### Gestion des risques identifiés
 
-| À faire | En cours | Terminé |
-|---------|---------|--------|
-| HistoryScreen | ResultScreen | LoginScreen |
-| | AuthInterceptor | RegisterScreen |
-| | | TryOnScreen |
-| | | ImagePickerCard |
+| Risque | Impact | Mitigation |
+|--------|--------|-----------|
+| Latence HuggingFace (30-90s) | UX dégradée | Indicateur de chargement + AbsorbPointer |
+| Cold start IDM-VTON (90s) | Timeout réseau | Timeout 300s + HTTP 502 propre |
+| Format Gradio non documenté | Blocage intégration | Lecture source HuggingFace Space |
+| Permissions galerie iOS/Android | Comportement différent | Test sur 2 plateformes |
+| Dépendance abandonnée (magic-bin) | Risque sécurité | Remplacement par `filetype` |
 
-### Gestion des risques clés
+### Difficulté principale (Sprint 2)
 
-⚠️ **Latence HuggingFace** (30-90s)
-→ Indicateur de chargement explicite
-
-⚠️ **Cold start IDM-VTON** (jusqu'à 90s)
-→ Timeout 300s + HTTP 502 propre
+Le paramètre `person` d'IDM-VTON attend un **dict `ImageEditor`**, pas une simple image — non documenté. Résolu après 2 jours d'analyse du code source du Space.
 
 </div>
 
 </div>
 
-<!-- 
-NOTES ORATEUR — Slide 5 [~1 min 30]
+<!--
+NOTES ORATEUR — Slide 8 [~1 min 30]
 
 "J'ai conduit ce projet en méthode Agile Scrum avec 6 sprints de 2 semaines chacun.
 
-Les 3 premiers sprints ont posé les fondations : cadrage et architecture, authentification JWT backend, puis l'API d'essayage avec l'intégration HuggingFace. C'est d'ailleurs pendant le sprint 2 que j'ai découvert la contrainte principale : le modèle IDM-VTON peut prendre entre 30 et 90 secondes à répondre. J'ai dû concevoir le code en conséquence.
+Les trois premiers sprints ont posé les fondations : cadrage, authentification JWT, puis l'intégration HuggingFace. C'est pendant le sprint 2 que j'ai découvert la principale difficulté technique : le format d'appel du modèle IDM-VTON. La documentation Gradio était incomplète — le paramètre personne est un dictionnaire au format ImageEditor et non une simple image. J'ai dû lire le code source du Space HuggingFace pour comprendre le format attendu. C'est une leçon sur l'importance de tester les API tierces très tôt dans un projet.
 
-Le sprint 3 a été consacré au frontend Flutter. Le sprint 4 a renforcé la sécurité — rate limiting, validation MIME, headers HTTP. Et le sprint 5 à la documentation et aux tests.
+Le sprint 3 a développé les 5 écrans Flutter. Le sprint 4 a renforcé la sécurité. Le sprint 5 a finalisé les tests et la documentation.
 
-Les outils utilisés sont ceux de StyleShop : GitHub pour le versioning, Jira pour le backlog, Figma pour les maquettes, Postman pour tester l'API manuellement."
+Les outils utilisés sont ceux de StyleShop : GitHub pour le versioning, Jira pour le suivi du backlog, Figma pour les maquettes, Insomnia pour tester l'API."
 -->
 
 ---
 
 <!-- ═══════════════════════════════════════════════════════════
-     SLIDE 6 — INTERFACE LOGIN
+     SLIDE 9 — SÉCURITÉ OWASP
+     ═══════════════════════════════════════════════════════════ -->
+
+## Sécurité — Approche OWASP Top 10
+
+<div class="cols-2">
+
+<div>
+
+| OWASP 2021 | Statut | Mesure appliquée |
+|-----------|--------|-----------------|
+| A01 — Access Control | <span class="ok">✅</span> | `filter(user=request.user)` · UUID non prédictible |
+| A02 — Crypto Failures | <span class="ok">✅</span> | JWT HS256 · `FlutterSecureStorage` (keychain/keystore) |
+| A03 — Injection | <span class="ok">✅</span> | ORM Django exclusivement (0 SQL brut) |
+| A04 — Insecure Design | <span class="ok">✅</span> | Rate limiting 10 req/h · UUID |
+| A05 — Misconfiguration | <span class="ok">✅</span> | `DEBUG=False` · `ALLOWED_HOSTS` strict |
+| A07 — Auth Failures | <span class="ok">✅</span> | Access 15 min · Refresh 7 j · Refresh auto Flutter |
+| A08 — Integrity | <span class="ok">✅</span> | Validation magic bytes (filetype) + taille 10 Mo |
+| A09 — Logging | <span class="ok">✅</span> | Logger `tryon.services` INFO/ERROR structuré |
+| A10 — SSRF | <span class="ok">✅</span> | URL HuggingFace codée en dur (pas d'entrée user) |
+
+</div>
+
+<div>
+
+### Couches de protection
+
+```
+[Flutter]
+  ├─ Stockage JWT chiffré (keystore/keychain)
+  ├─ AbsorbPointer (anti double-submit)
+  └─ Refresh automatique transparent
+
+[API Django]
+  ├─ Authentification JWT sur toutes routes
+  ├─ Isolation par user (filter ORM)
+  ├─ Rate limiting 10/h par user
+  └─ Validation MIME magic bytes
+
+[Modèle données]
+  ├─ UUID (résistance BOLA)
+  ├─ Cascade RGPD
+  └─ Media protégée (ProtectedMediaView)
+```
+
+### A06 — Composants vulnérables
+
+Veille active → CVE-2024-56374 Django (corrigée en 5.0.14)
+Remplacement `python-magic-bin` → `filetype`
+
+</div>
+
+</div>
+
+<!--
+NOTES ORATEUR — Slide 9 [~1 min 30]
+
+"La sécurité a été prise en compte dès la conception, pas ajoutée à la fin. Je vais vous montrer les trois couches de protection.
+
+Côté Flutter, les tokens JWT sont stockés dans le keystore Android ou le keychain iOS — des espaces chiffrés par le système d'exploitation, contrairement à SharedPreferences qui est en clair.
+
+Côté API Django, toutes les routes protégées filtrent les données par utilisateur authentifié. Le rate limiting limite chaque utilisateur à 10 générrations par heure. La validation MIME inspecte les magic bytes des fichiers.
+
+Côté modèle, les UUIDs rendent l'énumération des ressources impossible. Le CASCADE garantit la suppression des données lors du droit à l'effacement RGPD. La ProtectedMediaView vérifie que le chemin demandé appartient bien à l'utilisateur connecté.
+
+Sur les 10 risques OWASP 2021, 9 sont directement adressés dans le code."
+-->
+
+---
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 10 — VEILLE TECHNOLOGIQUE
+     ═══════════════════════════════════════════════════════════ -->
+
+## Veille technologique & sécurité
+
+<div class="cols-2">
+
+<div>
+
+### Sources consultées
+
+<span class="chip">CVE Mitre</span>
+<span class="chip">OWASP News</span>
+<span class="chip">PyPI Advisories</span>
+<span class="chip">Django Security Blog</span>
+<span class="chip">CERT-FR</span>
+<span class="chip">GitHub Dependabot</span>
+<span class="chip">PortSwigger Research</span>
+
+### CVE identifiées et traitées
+
+| CVE | Composant | Risque | Action |
+|-----|----------|--------|--------|
+| CVE-2024-56374 | Django < 5.0.11 | DoS | Mise à jour 5.0.14 ✅ |
+| CVE-2024-3116 | pgAdmin < 8.6 | RCE | Mise à jour immédiate ✅ |
+
+</div>
+
+<div>
+
+### Action majeure — Risque supply chain
+
+**Problème détecté** :
+`python-magic-bin` (bibliothèque de validation MIME)
+→ Abandonnée depuis 2023
+→ Encapsule une DLL `libmagic` v1.0.17 de **2009** (non patchée)
+→ Fork suspect avec le même nom sur PyPI
+
+**Risque** : DLL binaire non auditée + possible typosquatting
+
+**Correction** :
+Remplacement par `filetype`
+→ Python pur, aucune dépendance binaire
+→ Maintenus activement (v1.2+)
+→ Résistance identique : lecture des magic bytes
+
+<span class="chip chip-ok">0 dépendance binaire système</span>
+<span class="chip chip-ok">Maintenu activement</span>
+
+</div>
+
+</div>
+
+<!--
+NOTES ORATEUR — Slide 10 [~1 minute]
+
+"La veille sécurité repose sur 7 sources consultées entre hebdomadairement et mensuellement.
+
+Deux CVE ont eu un impact direct.
+
+La première, CVE-2024-56374, affecte Django avant la version 5.0.11. Notre projet utilise la 5.0.14 — correctif déjà inclus.
+
+La deuxième, CVE-2024-3116, est une vulnérabilité critique dans pgAdmin permettant l'exécution de code arbitraire. Mise à jour immédiate.
+
+L'action la plus significative reste le remplacement de python-magic-bin. Cette bibliothèque abandonnée encapsule une DLL binaire de 2009 — sans patches de sécurité depuis 17 ans. Un fork suspect avec le même nom circulait sur PyPI. J'ai remplacé par filetype, une bibliothèque Python pure, activement maintenue, avec une résistance équivalente — analyse des magic bytes pour détecter le spoofing d'extension."
+-->
+
+---
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION — RÉALISATION TECHNIQUE
+     ═══════════════════════════════════════════════════════════ -->
+
+<!-- _class: section-slide -->
+<!-- _paginate: false -->
+
+## Réalisation technique
+
+Démonstration des composants clés du code
+
+<!--
+NOTES ORATEUR — [~10 secondes]
+"Passons maintenant à la réalisation technique avec trois extraits de code représentatifs."
+-->
+
+---
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 11 — INTERFACE FLUTTER — AUTH
      ═══════════════════════════════════════════════════════════ -->
 
 ## Interface Flutter — Authentification
@@ -390,11 +794,15 @@ Les outils utilisés sont ceux de StyleShop : GitHub pour le versioning, Jira po
 
 <div>
 
-<!-- INSÉRER ICI : screenshot de LoginScreen sur émulateur Android -->
-<div class="screenshot" style="height: 340px; font-size: 1.1em;">
+<!-- INSÉRER : screenshot LoginScreen sur émulateur Android -->
+<div class="screenshot" style="height: 320px; font-size: 1.1em;">
   📱 <strong>[CAPTURE D'ÉCRAN]</strong><br>
   Écran de Connexion<br>
   <small>Champs username + password<br>Bouton "Se connecter"<br>Lien "S'inscrire"</small>
+</div>
+
+<div class="muted" style="margin-top: 10px;">
+Validation côté client avant envoi réseau
 </div>
 
 </div>
@@ -417,7 +825,6 @@ Future<void> _submit() async {
       if (mounted) context.go('/home');
 
     } catch (e) {
-      // Erreur serveur → SnackBar rouge
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString()),
           backgroundColor: Theme.of(context)
@@ -428,74 +835,72 @@ Future<void> _submit() async {
 }
 ```
 
-**Token stocké dans `FlutterSecureStorage`**
-*(keychain iOS / keystore Android)*
+**Token JWT stocké dans `FlutterSecureStorage`**
+*(keychain iOS / keystore Android — chiffré OS)*
 
 </div>
 
 </div>
 
-<!-- 
-NOTES ORATEUR — Slide 6 [~1 minute]
+<!--
+NOTES ORATEUR — Slide 11 [~1 min 30]
 
-"L'écran de connexion est construit avec Flutter et piloté par un provider Riverpod.
+"L'écran de connexion illustre le pattern Provider de Riverpod.
 
-Le formulaire valide les champs côté client — champs obligatoires, longueur minimale — avant d'envoyer la requête.
+La logique est propre : _submit() valide le formulaire côté client, puis délègue au AuthNotifier. C'est le notifier qui appelle l'API et met à jour l'état global de l'application. L'écran ne fait qu'observer et réagir.
 
-Ce qui est important côté sécurité : le token JWT renvoyé par Django est stocké dans FlutterSecureStorage — soit le keychain iOS, soit le keystore Android selon la plateforme. Ces espaces de stockage sont chiffrés par le système d'exploitation, contrairement à SharedPreferences qui est en clair.
+Point de sécurité important : le token JWT n'est jamais stocké dans SharedPreferences, qui est en clair sur le système de fichiers Android. On utilise FlutterSecureStorage qui s'appuie sur le keystore Android et le keychain iOS — espaces chiffrés par le système d'exploitation.
 
-En cas d'erreur serveur — mauvais mot de passe, compte inexistant — l'API retourne un 401 et l'intercepteur affiche une SnackBar rouge avec le message de l'erreur."
+L'intercepteur HTTP injecte automatiquement le Bearer token dans chaque requête suivante, et gère le refresh silencieux quand le token d'accès expire."
 -->
 
 ---
 
 <!-- ═══════════════════════════════════════════════════════════
-     SLIDE 7 — INTERFACE TRYON
+     SLIDE 12 — INTERFACE FLUTTER — TRYON
      ═══════════════════════════════════════════════════════════ -->
 
-## Interface Flutter — Écran Try-On
+## Interface Flutter — Écran Try-On & Riverpod
 
 <div class="cols-2">
 
 <div>
 
-<!-- INSÉRER : 2 ou 3 screenshots côte à côte : vide / images sélectionnées / chargement -->
-<div class="screenshot" style="height: 180px;">
+<div class="screenshot" style="height: 160px;">
   📱 <strong>[CAPTURE]</strong> TryOnScreen vide<br>
   <small>Deux cartes "Appuyez pour sélectionner"</small>
 </div>
-<div class="screenshot" style="height: 140px; margin-top: 12px;">
+<div class="screenshot" style="height: 130px; margin-top: 10px;">
   📱 <strong>[CAPTURE]</strong> Chargement IA<br>
-  <small>CircularProgressIndicator + "Génération en cours (30-60s)..."</small>
+  <small>CircularProgressIndicator + "Génération en cours…"</small>
 </div>
 
 </div>
 
 <div>
 
-### Pattern Riverpod — `TryOnNotifier`
+### Gestion d'état — `TryOnNotifier`
 
 ```dart
-// L'UI écoute deux signaux :
-// 1. errorMessage → SnackBar rouge
-// 2. resultImageUrl → navigation '/result'
+// ref.listen réagit aux changements d'état
+// sans logique dans build()
 ref.listen<AsyncValue<TryOnState>>(
   tryOnProvider, (prev, next) {
     if (next.value?.errorMessage != null)
       ScaffoldMessenger.of(context)
-        .showSnackBar(...);
+        .showSnackBar(...);            // ← effet de bord
 
     if (next.value?.resultImageUrl != null
         && prev?.value?.resultImageUrl == null)
-      context.push('/result'); // GoRouter
+      context.push('/result');         // ← navigation
   }
 );
 
-// AbsorbPointer : bloque TOUTES
-// les interactions pendant la génération IA
+// Bloque TOUTES les interactions pendant la génération
+// → anti double-submit, anti-navigation accidentelle
 return AbsorbPointer(
-  absorbing: isLoading,
-  child: /* Formulaire */ ...
+  absorbing: state.isLoading,
+  child: /* Formulaire + bouton Générer */ ...
 );
 ```
 
@@ -503,61 +908,31 @@ return AbsorbPointer(
 
 </div>
 
-<!-- 
-NOTES ORATEUR — Slide 7 [~2 minutes]
+<!--
+NOTES ORATEUR — Slide 12 [~1 min 30]
 
-"L'écran TryOn est le cœur de l'application. Il présente deux cartes de sélection d'image — une pour la photo de l'utilisateur, une pour le vêtement — et un champ de description optionnel qui aide le modèle IA.
+"L'écran TryOn présente deux cartes de sélection d'image — photo de l'utilisateur et photo du vêtement — et un bouton Générer.
 
-J'ai utilisé le pattern Riverpod avec un AsyncNotifier. L'état de l'écran peut être dans trois modes : normal, chargement, ou erreur.
+Deux patterns techniques importants.
 
-Deux points techniques importants.
+Premier : le ref.listen. En Riverpod, l'idée est de ne jamais mettre de logique impérative — navigation, SnackBars — dans la méthode build. On utilise ref.listen pour réagir aux changements d'état et déclencher ces effets de bord. Ici, on navigue vers ResultScreen quand resultImageUrl passe de null à une URL valide, et on affiche une SnackBar rouge si errorMessage est renseigné.
 
-Premier : le `ref.listen` permet de réagir aux changements d'état pour déclencher des effets de bord — afficher une SnackBar en cas d'erreur, ou naviguer vers l'écran résultat quand l'URL de l'image générée est disponible. On évite ainsi de mettre de la logique de navigation dans le build.
-
-Deuxième : l'`AbsorbPointer`. Pendant les 30 à 90 secondes de génération IA, l'utilisateur ne doit pas pouvoir interagir avec l'interface — pas de double-clic sur Générer, pas de navigation accidentelle. L'AbsorbPointer bloque toutes les interactions au niveau de l'arbre de widgets pendant le chargement."
+Deuxième : l'AbsorbPointer. Pendant les 30 à 90 secondes de génération IA, l'utilisateur ne doit pas pouvoir interagir — pas de double-clic sur Générer, pas de navigation accidentelle. L'AbsorbPointer bloque physiquement tous les events tactiles sur l'arbre de widgets enfant."
 -->
 
 ---
 
 <!-- ═══════════════════════════════════════════════════════════
-     SLIDE 8 — TRYONSERVICE
+     SLIDE 13 — BACKEND DJANGO + JEUX D'ESSAI
      ═══════════════════════════════════════════════════════════ -->
 
-## Composant métier — `TryOnService`
+## Backend Django — Code clé & Jeu d'essai
 
 <div class="cols-2">
 
 <div>
 
-### Diagramme de séquence simplifié
-
-```
-Flutter          Django API       HuggingFace
-  │                  │                │
-  │ POST /api/tryon/ │                │
-  │─────────────────►│                │
-  │                  │ validate()     │
-  │                  │ INSERT PENDING │
-  │                  │                │
-  │                  │ predict(imgs)  │
-  │                  │───────────────►│
-  │                  │   ~30-90 s     │
-  │                  │◄───────────────│
-  │                  │ result[0]      │
-  │                  │ save to media/ │
-  │                  │ UPDATE COMPLETED
-  │◄─────────────────│                │
-  │ HTTP 201 + URL   │                │
-```
-
-**En cas d'erreur HuggingFace** → `TryOnAPIException`
-→ HTTP 502 + `request_id` pour traçabilité
-
-</div>
-
-<div>
-
-### `services.py` — Appel Gradio
+### `services.py` + `validators.py`
 
 ```python
 class TryOnService:
@@ -566,450 +941,312 @@ class TryOnService:
     @classmethod
     def generate_tryon(cls, person_path,
                        garment_path, description):
-        start = time.time()
         try:
             client = Client(cls.SPACE_ID,
               httpx_kwargs={"timeout": 300})
-
             result = client.predict(
               {"background": handle_file(person_path),
                "layers": [], "composite": None},
               handle_file(garment_path),
-              description,
-              True, False, 30, 42,
+              description, True, False, 30, 42,
               api_name="/tryon"
             )
-            logger.info(f"✅ {time.time()-start:.1f}s")
-            return result[0]  # chemin temporaire
-
+            return result[0]
         except Exception as exc:
             raise TryOnAPIException(str(exc))
-```
 
-</div>
-
-</div>
-
-<!-- 
-NOTES ORATEUR — Slide 8 [~2 minutes]
-
-"Le composant le plus complexe du backend est le TryOnService. Son rôle est d'isoler l'appel à l'API HuggingFace du reste de l'application — c'est le pattern Service Layer.
-
-Le diagramme de séquence montre le flux complet : Flutter envoie ses images en multipart à Django, Django valide, enregistre en base avec le statut PROCESSING, puis appelle synchroniquement HuggingFace via le client Gradio.
-
-Deux détails techniques importants dans le code.
-
-D'abord, le timeout est réglé à 300 secondes — 5 minutes. IDM-VTON peut prendre jusqu'à 90 secondes en cold start, c'est-à-dire quand le Space HuggingFace n'a pas été utilisé depuis un moment. On laisse donc une large marge.
-
-Ensuite, toute exception — timeout réseau, réponse invalide, quota dépassé — est capturée et re-levée sous forme de TryOnAPIException. Cela permet à la vue Django de distinguer une erreur IA d'une erreur interne et de retourner le bon code HTTP : 502 Bad Gateway si c'est l'IA qui est en faute, 500 Internal Server Error si c'est notre code.
-
-Le `request_id` retourné dans la réponse 502 permet de retrouver la ligne en base et de corréler avec les logs."
--->
-
----
-
-<!-- ═══════════════════════════════════════════════════════════
-     SLIDE 9 — DJANGO MODÈLE & API REST
-     ═══════════════════════════════════════════════════════════ -->
-
-## Modèle Django & API REST
-
-<div class="cols-2">
-
-<div>
-
-### Endpoints exposés
-
-| Méthode | URL | Auth | Code |
-|---------|-----|------|------|
-| POST | `/api/auth/register/` | ❌ | 201 |
-| POST | `/api/auth/token/` | ❌ | 200 |
-| POST | `/api/auth/token/refresh/` | ❌ | 200 |
-| GET | `/api/auth/profile/` | ✅ JWT | 200 |
-| **POST** | **`/api/tryon/`** | ✅ JWT | **201** |
-| GET | `/api/tryon/` | ✅ JWT | 200 |
-| GET | `/api/tryon/{uuid}/` | ✅ JWT | 200 |
-| GET | `/media/{path}` | ✅ JWT | 200 |
-
-### Isolation multi-tenant
-
-```python
-def get_queryset(self):
-    # Filtrage strict : chaque user
-    # ne voit QUE ses propres requêtes
-    return TryOnRequest.objects.filter(
-        user=self.request.user
-    ).order_by('-created_at')
-```
-
-</div>
-
-<div>
-
-### `models.py` — Clés de conception
-
-```python
-class TryOnRequest(models.Model):
-    class Status(models.TextChoices):
-        PENDING    = 'PENDING'
-        PROCESSING = 'PROCESSING'
-        COMPLETED  = 'COMPLETED'
-        FAILED     = 'FAILED'
-
-    # UUID : non-prédictible → résistance BOLA
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False
-    )
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE  # RGPD : cascade
-    )
-    # Validator MIME sur les images d'entrée
-    person_image  = models.ImageField(
-        validators=[validate_image_file]
-    )
-    garment_image = models.ImageField(
-        validators=[validate_image_file]
-    )
-    # result_image : pas de validator
-    # → généré par le backend, pas l'user
-    result_image = models.ImageField(
-        blank=True, null=True
-    )
-    status     = models.CharField(max_length=20)
-    created_at = models.DateTimeField(auto_now_add=True)
-```
-
-</div>
-
-</div>
-
-<!-- 
-NOTES ORATEUR — Slide 9 [~1 min 30]
-
-"Je vais vous montrer deux aspects du modèle qui ont été pensés dès la conception pour la sécurité.
-
-Côté API : toutes les routes protégées filtrent les données par utilisateur authentifié. C'est le get_queryset qui retourne uniquement les requêtes appartenant à l'utilisateur connecté. Même si quelqu'un connaît l'UUID d'un essayage d'un autre utilisateur, le filtre ORM retourne une liste vide, ce qui se traduit par un 404 — pas un 403 — pour ne pas révéler l'existence de la ressource.
-
-Côté modèle : deux choix importants.
-
-D'abord, l'UUID comme clé primaire. Contrairement à un auto-incrément entier, un UUID v4 est impossible à deviner. Même si on exposait l'ID dans une URL, un attaquant ne pourrait pas énumérer les requêtes des autres utilisateurs.
-
-Ensuite, le `on_delete=CASCADE` sur la clé étrangère utilisateur. Si un compte est supprimé — droit à l'effacement RGPD — toutes ses images et ses essayages sont automatiquement supprimés en base."
--->
-
----
-
-<!-- ═══════════════════════════════════════════════════════════
-     SLIDE 10 — SÉCURITÉ OWASP
-     ═══════════════════════════════════════════════════════════ -->
-
-## Sécurité — Conformité OWASP Top 10
-
-<div class="cols-2">
-
-<div>
-
-| OWASP 2021 | Statut | Mesure principale |
-|-----------|--------|-----------------|
-| A01 — Access Control | <span class="ok">✅</span> | `filter(user=request.user)` · UUID |
-| A02 — Crypto Failures | <span class="ok">✅</span> | JWT HS256 · `FlutterSecureStorage` |
-| A03 — Injection | <span class="ok">✅</span> | ORM Django (0 SQL brut) |
-| A04 — Insecure Design | <span class="ok">✅</span> | Rate limiting 10/h · UUID |
-| A05 — Misconfiguration | <span class="ok">✅</span> | `DEBUG=False` · `ALLOWED_HOSTS` |
-| A07 — Auth Failures | <span class="ok">✅</span> | Access 15 min · Refresh 7 j |
-| A08 — Integrity | <span class="ok">✅</span> | **Validation MIME** magic bytes |
-| A09 — Logging | <span class="ok">✅</span> | Logger `tryon.services` INFO/ERROR |
-| A10 — SSRF | <span class="ok">✅</span> | URL HuggingFace codée en dur |
-
-</div>
-
-<div>
-
-### Focus — Validation MIME (A08)
-
-```python
-# validators.py
-# Résiste à l'extension spoofing :
-# un PDF renommé en .jpg est détecté
-
+# Validation magic bytes (résiste au spoofing)
 def validate_image_file(file):
-    if file.size > 10 * 1024 * 1024:
-        raise ValidationError("Fichier > 10 Mo")
-
-    # Lecture des magic bytes réels
-    file.seek(0)
-    header = file.read(2048)
-    file.seek(0)
-
+    file.seek(0); header = file.read(2048); file.seek(0)
     kind = filetype.guess(header)
     mime = kind.mime if kind else 'unknown'
-
-    if mime not in ['image/jpeg',
-                    'image/png',
-                    'image/webp']:
-        raise ValidationError(
-          f"Type invalide : {mime}"
-        )
+    if mime not in ['image/jpeg','image/png','image/webp']:
+        raise ValidationError(f"Type invalide : {mime}")
 ```
 
-**Pourquoi `filetype` ?**
-Pure Python · pas de dépendance binaire
-Résiste au `Content-Type` HTTP falsifié
-
 </div>
-
-</div>
-
-<!-- 
-NOTES ORATEUR — Slide 10 [~2 minutes]
-
-"La sécurité a été prise en compte dès la conception, pas ajoutée à la fin. Voici comment le projet adresse les 10 risques du top OWASP.
-
-Je vais zoomer sur deux points.
-
-Le contrôle d'accès A01 : j'ai déjà mentionné le filtre ORM. On ajoute à ça la ProtectedMediaView qui vérifie que le chemin du fichier demandé contient bien le dossier de l'utilisateur connecté — donc slash user_{son ID} slash. Impossible d'accéder au dossier d'un autre utilisateur en manipulant l'URL.
-
-La validation des uploads A08 : c'est le point qui m'a le plus occupé. Le problème avec la validation des fichiers c'est que le client contrôle l'extension du fichier et le Content-Type HTTP. Un attaquant peut envoyer un PDF en lui donnant l'extension .jpg et en déclarant image/jpeg dans la requête — le serveur ne verrait que du JPEG.
-
-La solution est de lire les magic bytes — les premiers octets du fichier — qui sont une signature binaire propre à chaque format. Un PDF commence toujours par les bytes 25 50 44 46, peu importe comment vous l'avez renommé. La bibliothèque filetype fait cette analyse en Python pur, sans dépendance binaire système.
-
-J'ai aussi remplacé python-magic-bin, qui était abandonné depuis 2023, par filetype — un point que je détaillerai dans la slide de veille."
--->
-
----
-
-<!-- ═══════════════════════════════════════════════════════════
-     SLIDE 11 — JEU D'ESSAI
-     ═══════════════════════════════════════════════════════════ -->
-
-## Jeu d'essai — 8 cas testés
-
-<div class="cols-2" style="gap: 24px;">
 
 <div>
 
-| N° | Scénario | Résultat | Statut |
-|----|---------|---------|--------|
+### Jeu d'essai — 8 cas de test
+
+| N° | Scénario | Résultat attendu | Statut |
+|----|---------|-----------------|--------|
 | T01 | Inscription valide | HTTP 201 | <span class="ok">✅</span> |
 | T02 | Connexion JWT | HTTP 200 + tokens | <span class="ok">✅</span> |
-| T03 | Upload PDF renommé .jpg | HTTP 400 + message MIME | <span class="ok">✅</span> |
+| T03 | PDF renommé en .jpg | HTTP 400 MIME | <span class="ok">✅</span> |
 | T04 | 11ème requête en 1h | HTTP 429 + Retry-After | <span class="ok">✅</span> |
-| T05 | Isolation user1/user2 | Liste vide pour user2 | <span class="ok">✅</span> |
-| T06 | Accès fichier autre user | HTTP 403 Forbidden | <span class="ok">✅</span> |
+| T05 | Isolation user1/user2 | Liste vide user2 | <span class="ok">✅</span> |
+| T06 | Accès fichier autre user | HTTP 403 | <span class="ok">✅</span> |
 | T07 | Route sans token | HTTP 401 | <span class="ok">✅</span> |
-| T08 | Token expiré (Flutter) | Refresh auto · 0 erreur visible | <span class="ok">✅</span> |
+| T08 | Token expiré (Flutter) | Refresh auto · 0 erreur | <span class="ok">✅</span> |
 
-<span class="chip chip-ok">8/8 — Taux de conformité 100 %</span>
-
-</div>
-
-<div>
-
-<!-- INSÉRER : screenshot du résultat IA généré par IDM-VTON -->
-<div class="screenshot" style="height: 280px; font-size: 1.1em;">
-  📸 <strong>[CAPTURE]</strong><br>
-  Résultat de génération IA<br>
-  <small>Écran ResultScreen<br>Image IDM-VTON affichée<br>Boutons Télécharger + Partager</small>
-</div>
-
-<div class="muted" style="margin-top: 10px;">
-⚠️ En production : Redis requis pour le rate limiting<br>
-⚠️ Redirection auto vers login si refresh expiré (phase 2)
-</div>
+<span class="chip chip-ok">8/8 — 100 % conformes</span>
 
 </div>
 
 </div>
 
-<!-- 
-NOTES ORATEUR — Slide 11 [~1 min 30]
+<!--
+NOTES ORATEUR — Slide 13 [~2 minutes]
 
-"Le jeu d'essai couvre 8 cas de test — nominaux et cas limites.
+"Je vais présenter deux composants backend puis commenter le jeu d'essai.
 
-Je vais en commenter trois.
+TryOnService encapsule l'appel Gradio. Le point technique clé : le paramètre person n'est pas une image directe mais un dictionnaire au format ImageEditor — background, layers, composite — c'est ce que j'ai découvert après 2 jours d'analyse du code source HuggingFace.
 
-Le test T03 valide la validation MIME : j'ai pris un vrai fichier PDF, je l'ai renommé en photo.jpg et je l'ai envoyé avec le Content-Type image/jpeg. L'API a bien retourné un HTTP 400 avec le message 'Type de fichier invalide détecté : application/pdf'. Le validateur a vu les magic bytes PDF malgré le camouflage.
+Le validator MIME lit les magic bytes du fichier. Un PDF renommé en .jpg commence toujours par les bytes 25 50 44 46 — impossible à masquer. La bibliothèque filetype le détecte malgré l'extension et le Content-Type HTTP falsifiés.
 
-Le test T04 valide le rate limiting : j'ai envoyé 10 requêtes valides successives — toutes en 201 — puis une 11ème. L'API a retourné un 429 avec le header Retry-After à 3600 secondes.
-
-Le test T08 est le plus intéressant : j'ai simulé un token expiré en réduisant ACCESS_TOKEN_LIFETIME à 1 seconde. Depuis Flutter, j'ai attendu 2 secondes puis effectué une action. L'AuthInterceptor a détecté le 401, a automatiquement appelé le endpoint de refresh, a mis à jour le token en stockage, et a rejoué la requête originale. L'utilisateur n'a rien vu.
-
-Deux points d'attention identifiés : en production multi-workers, le rate limiting nécessite Redis pour partager le compteur entre processus. Et la redirection automatique vers le login en cas de refresh expiré est à implémenter en phase 2."
+Sur le jeu d'essai, je vais commenter trois tests. T03 : j'ai pris un vrai PDF, renommé en photo.jpg, envoyé avec Content-Type image/jpeg. Résultat : HTTP 400 avec le message 'Type invalide : application/pdf'. T04 : après 10 requêtes, la 11ème reçoit un 429 avec le header Retry-After à 3600 secondes. T08, le plus intéressant : j'ai réduit l'ACCESS_TOKEN_LIFETIME à 1 seconde pour simuler l'expiration. L'AuthInterceptor a détecté le 401, refreshé automatiquement, et rejoué la requête sans que l'utilisateur ne voie rien."
 -->
 
 ---
 
 <!-- ═══════════════════════════════════════════════════════════
-     SLIDE 12 — VEILLE SÉCURITÉ
+     SECTION — CONCLUSION & PERSPECTIVES
      ═══════════════════════════════════════════════════════════ -->
 
-## Veille sécurité — Sources & vulnérabilités identifiées
+<!-- _class: section-slide -->
+<!-- _paginate: false -->
+
+## Conclusion & Perspectives
+
+Programmation orientée objet et évolutions futures
+
+<!--
+NOTES ORATEUR — [~10 secondes]
+"Pour conclure, je vais revenir sur les principes de programmation orientée objet appliqués dans ce projet, puis sur les axes d'évolution."
+-->
+
+---
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 14 — POO DANS FITAI
+     ═══════════════════════════════════════════════════════════ -->
+
+## Programmation Orientée Objet dans FitAI
 
 <div class="cols-2">
 
 <div>
 
-### Sources consultées
+### Les 4 piliers appliqués
 
-<span class="chip">CVE Mitre</span>
-<span class="chip">OWASP News</span>
-<span class="chip">PyPI Advisories</span>
-<span class="chip">Django Security Blog</span>
-<span class="chip">CERT-FR</span>
-<span class="chip">GitHub Dependabot</span>
-<span class="chip">PortSwigger Research</span>
+<div class="card" style="margin-bottom: 12px;">
 
-### CVE identifiées
+### 🔒 Encapsulation
+`TryOnService` cache toute la complexité HuggingFace.
+La vue Django appelle `generate_tryon()` sans savoir comment l'IA est interrogée.
+→ Changement de fournisseur IA : **une seule classe à modifier**
 
-| CVE | Composant | Impact | Action |
-|-----|----------|--------|--------|
-| CVE-2024-56374 | Django < 5.0.11 | DoS | Version 5.0.14 ✅ |
-| CVE-2024-3116 | pgAdmin < 8.6 | RCE | Mise à jour ✅ |
+</div>
+
+<div class="card" style="margin-bottom: 12px;">
+
+### 🧬 Héritage
+`TryOnViewSet` ← `ModelViewSet` (DRF) : CRUD + pagination gratuits
+`TryOnSerializer` ← `ModelSerializer` : validation + sérialisation automatiques
+`TryOnNotifier` ← `AsyncNotifier<TryOnState>` (Flutter/Riverpod)
+
+</div>
 
 </div>
 
 <div>
 
-### Action corrective majeure — Supply chain
+<div class="card" style="margin-bottom: 12px;">
 
-**Problème identifié** :
-`python-magic-bin` (validation MIME initiale)
-→ abandonnée depuis 2023
-→ DLL `libmagic` v1.0.17 de **2009** (non patchée)
-→ Fork suspect sur PyPI avec même nom
+### 🔄 Polymorphisme
+**Exceptions typées** : `TryOnAPIException` étend `Exception`
+→ `except TryOnAPIException` vs `except Exception` : traitement différencié selon l'origine de l'erreur (IA vs code interne)
+**Serializers** : redéfinition de `validate()` et `create()` pour la logique métier FitAI
 
-```python
-# AVANT (risqué)
-import magic
-mime = magic.from_buffer(header, mime=True)
+</div>
 
-# APRÈS (corrigé)
-import filetype  # Pure Python, maintenu
-kind = filetype.guess(header)
-mime = kind.mime if kind else 'unknown'
-```
+<div class="card">
 
-<span class="chip chip-ok">0 dépendance binaire système</span>
-<span class="chip chip-ok">Maintenu activement</span>
+### 🪟 Abstraction
+Architecture en couches : **Vue → Serializer → Service → ORM → DB**
+Chaque couche expose une interface sans révéler son implémentation.
+Flutter ignore la structure interne de Django.
+Django ignore que Flutter appelle via HTTP.
+IDM-VTON ignore la logique métier de StyleShop.
 
 </div>
 
 </div>
 
-<!-- 
-NOTES ORATEUR — Slide 12 [~1 minute]
+</div>
 
-"La veille sécurité que j'ai mise en place se base sur 7 sources, consultées entre hebdomadairement et mensuellement.
+<!--
+NOTES ORATEUR — Slide 14 [~1 min 30]
 
-Deux CVE ont eu un impact direct sur le projet.
+"Je vais maintenant revenir sur comment les quatre piliers de la programmation orientée objet se retrouvent concrètement dans FitAI.
 
-La première, CVE-2024-56374, affecte Django avant la version 5.0.11. Notre projet utilise Django 5.0.14 — version postérieure au correctif. Pas d'action nécessaire, mais cela nous a rappelé d'épingler les versions dans requirements.txt.
+L'encapsulation est le principe le plus visible dans TryOnService. La vue Django appelle generate_tryon avec les chemins de fichiers et reçoit un chemin de fichier en retour. Elle ignore totalement comment HuggingFace est appelé, quel format Gradio est utilisé, quel timeout est configuré. Si demain on passe d'IDM-VTON à un autre modèle, seule la classe TryOnService change — la vue et le serializer ne bougent pas.
 
-La deuxième, CVE-2024-3116, est une vulnérabilité critique dans pgAdmin 4 permettant l'exécution de code arbitraire. pgAdmin étant utilisé en développement pour administrer PostgreSQL, j'ai immédiatement mis à jour vers la version 8.6.
+L'héritage est omniprésent avec Django REST Framework. TryOnViewSet hérite de ModelViewSet et reçoit gratuitement toutes les opérations CRUD, la pagination, les codes HTTP corrects. On n'écrit que les personnalisations nécessaires — get_queryset pour filtrer par utilisateur.
 
-L'action la plus significative reste le remplacement de python-magic-bin. En auditant mes dépendances, j'ai découvert que cette bibliothèque était abandonnée depuis 2023 et encapsulait une DLL binaire de 2009 sans patchs de sécurité. Un fork avec un nom similaire circulait sur PyPI — risque de supply chain réel. J'ai remplacé par filetype, une bibliothèque Python pure, activement maintenue, sans aucune dépendance binaire système."
+Le polymorphisme se manifeste dans les exceptions typées : en attrapant TryOnAPIException séparément d'Exception, on peut retourner un HTTP 502 quand c'est l'IA qui est en faute, et un 500 quand c'est notre code.
+
+L'abstraction est le principe architectural fondateur : chaque couche a un contrat clair avec la couche voisine, sans connaître les détails d'implémentation."
 -->
 
 ---
 
 <!-- ═══════════════════════════════════════════════════════════
-     SLIDE 13 — SYNTHÈSE
+     SLIDE 15 — PERSPECTIVES ET ÉVOLUTIONS
      ═══════════════════════════════════════════════════════════ -->
 
-## Synthèse
+## Perspectives — Évolutions futures de FitAI
 
 <div class="cols-3">
 
 <div class="card">
 
-### ✅ Satisfactions
+### Court terme
+*Production-ready*
 
-- Architecture propre et évolutive
-- Sécurité pensée dès la conception (OWASP 9/10)
-- `AuthInterceptor` : refresh JWT transparent
-- Validation MIME robuste (magic bytes)
-- Suite de tests significative (20 tests)
+- **Redis** : rate limiting partagé entre workers (Django-ratelimit nécessite Redis en multi-process)
+- **Celery + Redis** : passer l'appel HuggingFace en asynchrone — Django rend la main immédiatement, Flutter poll le statut
+- **S3 AWS** : remplacer le stockage fichier local par un bucket S3 (scalabilité, durabilité)
+- **HTTPS + HSTS** : certificat TLS obligatoire avant mise en production
+
+</div>
+
+<div class="card">
+
+### Moyen terme
+*Qualité & UX*
+
+- **WebSocket** : notification temps réel à Flutter en fin de génération IA — supprime le besoin de polling
+- **Tests iOS** : validation des permissions galerie (comportement différent d'Android)
+- **Redirection auto** vers login si token de refresh expiré
+- **Historique filtrable** : tri par date, recherche par description
+- **Partage social** : export image résultat vers les réseaux
+
+</div>
+
+<div class="card">
+
+### Long terme
+*Valeur métier*
+
+- **IA self-hosted** : déployer IDM-VTON sur AWS SageMaker ou RunPod — supprimer la dépendance HuggingFace et les latences de cold start
+- **Recommandation** : moteur ML suggérant des vêtements du catalogue StyleShop selon le morphotype
+- **Try-on multi-vêtements** : assembler haut + bas + accessoires en une seule génération
+- **Intégration catalogue** : lien direct produit → achat depuis l'écran résultat
+
+</div>
+
+</div>
+
+<!--
+NOTES ORATEUR — Slide 15 [~1 min 30]
+
+"Je distingue trois horizons d'évolution.
+
+À court terme, les améliorations de robustesse pour la mise en production. La plus urgente est Celery : aujourd'hui Django est bloqué pendant 30 à 90 secondes par requête IA, ce qui n'est pas scalable. Avec Celery, Django lance la tâche en background et retourne immédiatement un identifiant de tâche à Flutter. Flutter interroge périodiquement le statut — et à terme, on peut même remplacer ce polling par une connexion WebSocket.
+
+À moyen terme, la qualité UX. Les WebSockets élimineraient le polling. Les tests iOS sont prioritaires car les permissions de galerie se comportent différemment de Android.
+
+À long terme, les évolutions à haute valeur métier. Héberger IDM-VTON en propre sur AWS SageMaker supprimerait les latences de cold start et la dépendance à HuggingFace. Le moteur de recommandation permettrait de passer de 'essayer un vêtement' à 'découvrir ce qui me convient' — un changement de paradigme pour StyleShop."
+-->
+
+---
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 16 — MERCI
+     ═══════════════════════════════════════════════════════════ -->
+
+<!-- _paginate: false -->
+
+<br>
+
+<div style="text-align: center; margin-top: 48px;">
+
+## FitAI — Bilan
+
+<div class="cols-3" style="margin: 32px 0; text-align: left;">
+
+<div class="card">
+
+### ✅ Livré
+- 5 écrans Flutter fonctionnels
+- API REST 8 endpoints sécurisés
+- Intégration IA IDM-VTON
+- Sécurité OWASP 9/10
 - 8/8 cas de test conformes
 
 </div>
 
 <div class="card">
 
-### ⚠️ Difficultés
-
-- **Latence HuggingFace** (30-90s) : UX à retravailler
-- **Format Gradio** d'IDM-VTON : dict ImageEditor non documenté → 2 jours de débogage
-- **Permissions galerie** iOS/Android : comportement différent par plateforme
-- **python-magic-bin** : dépendance abandonnée découverte tardivement
+### 🎓 Appris
+- Architecture N-tiers en conditions réelles
+- OO appliqué à Django + Flutter
+- Gestion du risque supply chain
+- Contraintes IA (latence, format API)
+- Veille CVE et audits de dépendances
 
 </div>
 
 <div class="card">
 
-### 🚀 Axes d'amélioration
-
-- **Redis** pour le rate limiting multi-workers
-- **File d'attente** (Celery) pour passer l'IA en asynchrone
-- **Stockage S3** (AWS) à la place du système local
-- **HTTPS + HSTS** pour le déploiement production
-- **Redirection auto** vers login si refresh expiré
-- **Tests iOS** (permissions spécifiques)
+### 🚀 Prochaine étape
+- Celery async (priorité 1)
+- Redis rate limiting
+- AWS S3 media
+- IA self-hosted (long terme)
 
 </div>
 
 </div>
 
----
+### Merci pour votre attention — Questions ?
 
-<br>
-
-<div style="text-align: center; margin-top: 32px;">
-
-### Merci pour votre attention
-
-**Questions ?**
-
-<br>
-
-<span class="muted">Loïc Botsy · loic.botsy@hotmail.com</span><br>
-<span class="muted">Code source : dépôt GitHub privé StyleShop · MSP1_BL</span><br>
+<span class="muted">Loïc Botsy · loic.botsy@hotmail.com · GitHub privé StyleShop · MSP1_BL</span><br>
 <span class="muted">Stack : Flutter 3 · Django 5 · PostgreSQL 15 · HuggingFace IDM-VTON</span>
 
 </div>
 
-<!-- 
-NOTES ORATEUR — Slide 13 [~1 min 30]
+<!--
+NOTES ORATEUR — Slide 16 [~30 secondes]
 
-"Pour conclure, voici ma synthèse du projet.
+"Pour conclure : FitAI est une application mobile fonctionnelle qui répond au besoin de StyleShop — réduire les retours en permettant l'essayage virtuel. Elle applique les principes de la programmation orientée objet à travers une architecture N-tiers propre, avec une attention particulière à la sécurité.
 
-Côté satisfactions : l'architecture N-tiers est propre et les responsabilités bien séparées. La sécurité a été adressée sur 9 des 10 risques OWASP, avec des mesures concrètes dans le code. Le refresh JWT automatique fonctionne parfaitement côté Flutter, ce dont je suis particulièrement satisfait car c'était un défi technique.
-
-Côté difficultés : la plus marquante a été le format d'appel IDM-VTON. La documentation de l'API Gradio était incomplète — le paramètre personne est un dictionnaire au format ImageEditor et non une simple image. J'ai passé deux jours à décortiquer le code source du Space HuggingFace pour comprendre le format attendu. C'est une leçon sur l'importance de tester les API tierces très tôt dans un projet.
-
-Côté améliorations : la priorité en production serait de passer l'appel HuggingFace en asynchrone avec Celery. Aujourd'hui Django est bloqué pendant 30 à 90 secondes par requête, ce qui n'est pas scalable. Avec Celery, on rendrait la main immédiatement à Flutter avec un identifiant de tâche, et Flutter interrogerait periodiquement le statut.
+Les principaux apprentissages sont l'application concrète des 4 piliers OO dans un projet full-stack, la gestion des dépendances et de la veille CVE, et la complexité réelle de l'intégration d'une API IA non documentée.
 
 Je suis maintenant disponible pour vos questions."
 
 ─────────────────────────────────────────────────
-TIMING GLOBAL (objectif 18-19 min)
+TIMING GLOBAL (objectif ~20 min)
 ─────────────────────────────────────────────────
-Slide 1  — Titre          :  0:30
-Slide 2  — Entreprise     :  1:00
-Slide 3  — Besoins        :  1:30
-Slide 4  — Architecture   :  2:00
-Slide 5  — Gestion projet :  1:30
-Slide 6  — Login Flutter  :  1:00
-Slide 7  — TryOn Flutter  :  2:00
-Slide 8  — TryOnService   :  2:00
-Slide 9  — Django API     :  1:30
-Slide 10 — Sécurité OWASP :  2:00
-Slide 11 — Jeu d'essai   :  1:30
-Slide 12 — Veille         :  1:00
-Slide 13 — Synthèse + Q   :  1:30
+Slide  1 — Titre              :  0:30
+Slide  2 — Entreprise         :  1:00
+Slide  3 — Besoins            :  1:30
+Slide  4 — Architecture       :  2:00
+Slide  5 — Modèle données     :  1:30
+Slide  6 — Diag. classes      :  1:30
+Slide  7 — Flux métier        :  1:30
+Slide  8 — Gestion projet     :  1:30
+Slide  9 — Sécurité OWASP     :  1:30
+Slide 10 — Veille             :  1:00
+Section — Réalisation         :  0:10
+Slide 11 — Flutter Auth       :  1:30
+Slide 12 — Flutter TryOn      :  1:30
+Slide 13 — Backend + tests    :  2:00
+Section — Conclusion          :  0:10
+Slide 14 — POO                :  1:30
+Slide 15 — Perspectives       :  1:30
+Slide 16 — Merci              :  0:30
 ─────────────────────────────────────
-TOTAL                     : 19:00 min
+TOTAL                         : ~22:00 min
+─────────────────────────────────────
+
+RÉPARTITION CONCEPTUEL / CODE :
+• Slides 2-10 (conceptuel)  : 9 slides — 69 %
+• Slides 11-13 (code/demo)  : 3 slides — 23 %
+• Slides 14-15 (POO/futur)  : 2 slides — 15 %
+• Section dividers + titre/merci : neutres
 ─────────────────────────────────────
 -->
